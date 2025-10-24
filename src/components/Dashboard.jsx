@@ -1,10 +1,13 @@
 import React from 'react';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
+import AddAnimal from './AddAnimal';
+import AnimalList from './AnimalList'; // <-- 1. IMPORT IT
 
 const Dashboard = () => {
 
-  const handleSignOut = () => {
-    // We will add sign-out logic here
-    console.log('Signing out...');
+  const handleSignOut = async () => {
+    // ... (sign out code is unchanged)
   };
 
   return (
@@ -12,6 +15,15 @@ const Dashboard = () => {
       <h2>Welcome to the Dashboard!</h2>
       <p>You are logged in.</p>
       <button onClick={handleSignOut}>Sign Out</button>
+
+      <hr /> 
+
+      <AddAnimal />
+
+      <hr /> {/* Add another line to separate */}
+
+      <AnimalList /> {/* <-- 2. USE IT */}
+
     </div>
   );
 };
