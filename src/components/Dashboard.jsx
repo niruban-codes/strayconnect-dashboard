@@ -7,7 +7,12 @@ import AnimalList from './AnimalList'; // <-- 1. IMPORT IT
 const Dashboard = () => {
 
   const handleSignOut = async () => {
-    // ... (sign out code is unchanged)
+    try {
+      await signOut(auth); // <-- This is the missing line
+      console.log('User signed out successfully');
+    } catch (error) {
+      console.error('Sign out error', error);
+    }
   };
 
   return (
