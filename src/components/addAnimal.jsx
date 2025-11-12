@@ -61,7 +61,6 @@ function AddAnimal() {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3>Add New Animal</h3>
 
       <div>
         <label>Name: </label>

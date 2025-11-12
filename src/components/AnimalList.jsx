@@ -62,7 +62,6 @@ function AnimalList() {
   
   return (
     <div>
-      <h3>Registered Animals</h3>
       {animals.length === 0 ? (
         <p>No animals registered yet.</p>
       ) : (

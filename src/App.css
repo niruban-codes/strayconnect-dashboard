@@ -1,1 +1,96 @@
+/* 1. LAYOUTS */
+*,
+*::after,
+*::before {
+  padding: 0;
+}
+/* The main two-column grid for the dashboard */
+.app-container {
+  /* 250px sidebar, 1fr for the rest of the content */
+  /* grid-template-columns: 250px 1fr;*/
+  gap: 30px; /* A nice gap between columns */
+  max-width: 1400px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+.content-area {
+  position: relative;
+  left: 300px;
+  overflow: auto;
+  width: calc(100vw - 300px);
+}
 
+/* The centered container for the login page */
+.login-container {
+  max-width: 500px;
+  margin: 3rem auto; /* Center on the page */
+}
+
+/* 2. SIDEBAR FIXES */
+
+/* This forces the sidebar links to be vertical */
+nav ul {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+/* 3. CARD STYLES */
+
+/* This creates the "card" for our content */
+.card {
+  /* Pico.css variables for light/dark mode */
+  background-color: var(--card-background-color);
+  border: var(--card-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-box-shadow);
+  margin-bottom: 1.5rem;
+}
+
+/* 4. ANIMAL LIST STYLES */
+
+/* This applies to the card holding the list */
+.animal-list ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* This styles each item in the list */
+.animal-list li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--muted-border-color);
+  flex-wrap: wrap;
+}
+
+.animal-list li:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+/* This styles the animal's image */
+.animal-list img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  margin-right: 1.5rem;
+  border-radius: var(--border-radius);
+}
+.sidebar {
+  display: flex;
+  flex: 1;
+  height: 100vh;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 300px;
+  position: fixed;
+  background-color: orangered;
+  left: 0;
+  top: 0;
+}
+.nav-items {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
