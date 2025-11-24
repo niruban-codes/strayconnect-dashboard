@@ -6,58 +6,69 @@ import axios from 'axios';
 function AddAnimal() {
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('');
-  const [file, setFile] = useState(null); // <-- ADD THIS
+  const [files, setFiles] = useState([]);
 
  const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // Step 1: Check if a file is selected
-  if (!file) {
-    alert("Please select an image to upload.");
-    return;
-  }
+    // 1. Check if files are selected
+    if (files.length === 0) {
+      alert("Please select at least one image.");
+      return;
+    }
 
-  // Step 2: Upload the image to Cloudinary
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+    try {
+      console.log("Uploading images to Cloudinary...");
+      
+      // 2. Prepare the upload config
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      const uploadURL = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
 
-  // Get these from your .env.local file
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadURL = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+      // 3. Create an upload "Promise" for each file
+      // (This creates a list of upload tasks to run)
+      const uploadPromises = Array.from(files).map((file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', uploadPreset);
+        
+        return axios.post(uploadURL, formData);
+      });
 
-  try {
-    console.log("Uploading to Cloudinary...");
-    const response = await axios.post(uploadURL, formData);
+      // 4. Wait for ALL uploads to finish
+      const responses = await Promise.all(uploadPromises);
 
-    // Get the secure URL of the uploaded image
-    const imageUrl = response.data.secure_url;
-    console.log("Upload successful, URL:", imageUrl);
+      // 5. Extract the URLs from the responses
+      const uploadedUrls = responses.map((response) => response.data.secure_url);
+      console.log("Uploaded URLs:", uploadedUrls);
 
-    // Step 3: Save the animal data (including the URL) to Firestore
-    console.log("Saving to Firestore...");
-    const docRef = await addDoc(collection(db, 'animals'), {
-      name: name,
-      species: species,
-      status: 'stray',
-      addedAt: new Date(),
-      imageUrl: imageUrl // <-- WE ARE SAVING THE IMAGE URL
-    });
-
-    console.log('Animal added with ID: ', docRef.id);
-
-    // Clear the form
-    setName('');
-    setSpecies('');
-    setFile(null);
-    // Clear the file input (this is a bit of a trick)
-    e.target.reset();
-
-  } catch (error) {
-    console.error('Error in upload process: ', error);
-    alert('Failed to add animal: ' + error.message);
-  }
-};
+      // 6. Save to Firestore
+      console.log("Saving to Firestore...");
+      const docRef = await addDoc(collection(db, 'animals'), {
+        name: name,
+        species: species,
+        status: 'stray',
+        addedAt: new Date(),
+        // Save the ARRAY of all photos
+        imageUrls: uploadedUrls, 
+        // Save just the FIRST photo as the main one (so the current app still works)
+        imageUrl: uploadedUrls[0] 
+      });
+      
+      console.log('Animal added with ID: ', docRef.id);
+      
+      // 7. Clear the form
+      setName('');
+      setSpecies('');
+      setFiles([]); // Clear the file list
+      e.target.reset(); // Reset the file input visually
+      alert("Animal added successfully!");
+      
+    } catch (error) {
+      console.error('Error in upload process: ', error);
+      alert('Failed to add animal: ' + error.message);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit}>
@@ -84,10 +95,11 @@ function AddAnimal() {
       <div>
         <label>Image: </label>
         <input 
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files[0])}
-        />
+  type="file"
+  accept="image/*"
+  multiple  // <-- Allows selecting multiple photos
+  onChange={(e) => setFiles(e.target.files)} // <-- Captures ALL selected files
+/>
       </div>
 
       <button type="submit">Add Animal</button>
