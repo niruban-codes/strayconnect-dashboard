@@ -1,48 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import Sidebar from './components/Sidebar';
 
 function App() {
-  // Create state to hold the current user
   const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Run auth listener once on mount
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log('User is logged in:', user);
-        setCurrentUser(user);
-      } else {
-        console.log('User is logged out');
-        setCurrentUser(null);
-      }
+      setCurrentUser(user);
+      setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  return (
-    <>
-      {currentUser ? (
-        <div className="app-container">
-          <Sidebar />
-          <div className="content-area">
-            <Dashboard />
-          </div>
+  if (loading) return (
+    <div className="min-h-screen bg-surface flex items-center justify-center">
+      <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+    </div>
+  );
+
+  return currentUser ? <Dashboard /> : (
+    <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="glass-card rounded-[2rem] p-10 w-full max-w-md shadow-xl border border-outline-variant/20">
+        <div className="flex items-center gap-3 mb-8 justify-center">
+          <span className="material-symbols-outlined text-primary text-4xl"
+            style={{ fontVariationSettings: "'FILL' 1" }}>pets</span>
+          <h1 className="font-headline font-extrabold text-3xl text-primary">StrayConnect</h1>
         </div>
-      ) : (
-        <div className="login-container">
-          <article>
-            <h1 style={{ textAlign: 'center' }}>🐾 StrayConnect</h1>
-            <Login />
-          </article>
-        </div>
-      )}
-    </>
+        <Login />
+      </div>
+    </div>
   );
 }
 
