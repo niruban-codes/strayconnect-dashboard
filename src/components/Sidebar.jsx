@@ -1,5 +1,5 @@
 // src/components/Sidebar.jsx
-function Sidebar({ activePage, onNavigate }) {
+function Sidebar({ activePage, onNavigate, onLogout }) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { id: 'animals', label: 'Animals', icon: 'pets' },
@@ -37,20 +37,37 @@ function Sidebar({ activePage, onNavigate }) {
         ))}
       </nav>
 
+      {/* ── BOTTOM ACTIONS ── */}
       <div className="mt-auto space-y-4">
-        <button className="w-full bg-gradient-to-r from-primary to-primary-container text-white py-3 px-4 rounded-full font-semibold flex items-center justify-center gap-2 shadow-lg hover:brightness-105 transition-all active:scale-95">
+        
+        {/* Emergency Rescue Button */}
+        <button 
+          onClick={() => onNavigate('emergency')}
+          className="w-full bg-gradient-to-r from-primary to-primary-container text-white py-3 px-4 rounded-full font-semibold flex items-center justify-center gap-2 shadow-lg hover:brightness-105 transition-all active:scale-95"
+        >
           <span className="material-symbols-outlined text-sm">emergency</span>
           Emergency Rescue
         </button>
+
         <div className="space-y-1">
-          <a href="#" className="flex items-center gap-3 px-4 py-2 text-stone-500 hover:text-emerald-800 text-xs uppercase tracking-widest font-semibold transition-all">
+          {/* Help Center Button */}
+          <button 
+            onClick={() => onNavigate('help')}
+            className={`w-full text-left flex items-center gap-3 px-4 py-2 text-xs uppercase tracking-widest font-semibold transition-all
+              ${activePage === 'help' ? 'text-emerald-800' : 'text-stone-500 hover:text-emerald-800'}`}
+          >
             <span className="material-symbols-outlined text-base">help</span>
             Help Center
-          </a>
-          <a href="#" className="flex items-center gap-3 px-4 py-2 text-stone-500 hover:text-emerald-800 text-xs uppercase tracking-widest font-semibold transition-all">
+          </button>
+
+          {/* Logout Button */}
+          <button 
+            onClick={onLogout}
+            className="w-full text-left flex items-center gap-3 px-4 py-2 text-stone-500 hover:text-red-600 text-xs uppercase tracking-widest font-semibold transition-all"
+          >
             <span className="material-symbols-outlined text-base">logout</span>
             Logout
-          </a>
+          </button>
         </div>
       </div>
     </aside>

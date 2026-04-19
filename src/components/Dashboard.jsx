@@ -74,7 +74,7 @@ function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-surface">
-      <Sidebar activePage={activePage} onNavigate={handleNavigate} />
+      <Sidebar activePage={activePage} onNavigate={handleNavigate} onLogout={handleLogout} />
 
       <main className="ml-64 flex-1 p-8 lg:p-12">
 
@@ -337,6 +337,14 @@ function Dashboard() {
         {/* ── EVENTS PAGE ── */}
         {activePage === 'events' && (
           <Events />
+        )}
+        {/* ── PLACEHOLDER PAGES ── */}
+        {['help', 'emergency'].includes(activePage) && (
+          <div className="flex flex-col items-center justify-center h-96 text-center">
+            <span className="material-symbols-outlined text-6xl text-outline-variant mb-4">construction</span>
+            <h2 className="font-headline text-2xl font-bold text-primary mb-2 capitalize">{activePage}</h2>
+            <p className="text-on-surface-variant">This section is coming soon.</p>
+          </div>
         )}
 
       </main>
