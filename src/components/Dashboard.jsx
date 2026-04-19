@@ -7,6 +7,9 @@ import Sidebar from './Sidebar';
 import AnimalList from './AnimalList';
 import AddAnimal from './addAnimal';
 import AnimalProfile from './AnimalProfile';
+import Reports from './Reports';
+import Volunteers from './Volunteers';
+import Events from './Events';
 
 function useAnimatedCount(target) {
   const [count, setCount] = useState(0);
@@ -323,14 +326,17 @@ function Dashboard() {
             </div>
           </>
         )}
-
-        {/* ── PLACEHOLDER PAGES ── */}
-        {['reports', 'volunteers', 'events'].includes(activePage) && (
-          <div className="flex flex-col items-center justify-center h-96 text-center">
-            <span className="material-symbols-outlined text-6xl text-outline-variant mb-4">construction</span>
-            <h2 className="font-headline text-2xl font-bold text-primary mb-2 capitalize">{activePage}</h2>
-            <p className="text-on-surface-variant">This section is coming soon.</p>
-          </div>
+        {/* ── REPORTS PAGE ── */}
+        {activePage === 'reports' && (
+          <Reports />
+        )}
+        {/* ── VOLUNTEERS PAGE ── */}
+        {activePage === 'volunteers' && (
+          <Volunteers />
+        )}
+        {/* ── EVENTS PAGE ── */}
+        {activePage === 'events' && (
+          <Events />
         )}
 
       </main>

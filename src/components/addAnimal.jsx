@@ -27,9 +27,10 @@ function AddAnimal({ onSuccess }) {
     if (files.length === 0) { alert("Please select at least one image."); return; }
     setSubmitting(true);
     try {
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      const cloudName = "dorhbk11x";
+      const uploadPreset = "strayconnect_uploads";
       const uploadURL = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+      
       const uploadPromises = Array.from(files).map((file) => {
         const formData = new FormData();
         formData.append('file', file);
