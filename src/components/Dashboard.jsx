@@ -84,7 +84,9 @@ function Dashboard() {
             <header className="flex justify-between items-center mb-10">
               <div>
                 <h2 className="font-headline font-extrabold text-3xl text-primary tracking-tight">Overview</h2>
-                <p className="text-on-surface-variant font-medium">Welcome back, Dr. Silva.</p>
+                <p className="text-on-surface-variant font-medium capitalize">
+                  Welcome back, {auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'Admin'}.
+                </p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 px-4 py-2 glass-card rounded-full outline outline-1 outline-outline-variant/20">
@@ -258,10 +260,19 @@ function Dashboard() {
                 {/* Status summary */}
                 <div className="glass-card rounded-[2rem] p-6 border border-emerald-900/5 flex-1">
                   <span className="text-xs font-bold uppercase tracking-widest text-emerald-800/40 block mb-4">Status Split</span>
-                  {['stray', 'sheltered', 'adopted'].map(status => {
+                  {/* UPDATE: Added 'owned' to the array */}
+                  {['stray', 'owned', 'sheltered', 'adopted'].map(status => {
                     const count = animals.filter(a => a.status === status).length;
                     const pct = totalRegistered > 0 ? Math.round((count / totalRegistered) * 100) : 0;
-                    const colors = { stray: 'text-amber-600 bg-amber-100', sheltered: 'text-sky-700 bg-sky-100', adopted: 'text-emerald-700 bg-emerald-100' };
+
+                    // UPDATE: Added a purple color scheme for 'owned'
+                    const colors = {
+                      stray: 'text-amber-600 bg-amber-100',
+                      owned: 'text-purple-700 bg-purple-100',
+                      sheltered: 'text-sky-700 bg-sky-100',
+                      adopted: 'text-emerald-700 bg-emerald-100'
+                    };
+
                     return (
                       <div key={status} className="flex items-center justify-between mb-3 last:mb-0">
                         <div className="flex items-center gap-2">

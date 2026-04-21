@@ -28,7 +28,8 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
     switch (status) {
       case 'adopted': return 'bg-primary-fixed text-on-primary-fixed';
       case 'sheltered': return 'bg-secondary-container text-on-secondary-container';
-      default: return 'bg-tertiary-container text-on-tertiary-fixed';
+      case 'owned': return 'bg-purple-100 text-purple-700'; // NEW: Owned badge
+      default: return 'bg-tertiary-container text-on-tertiary-fixed'; // Stray
     }
   };
 
