@@ -227,7 +227,7 @@ function Dashboard() {
                             <span className={`px-2 py-1 text-[10px] font-bold rounded-full capitalize
                               ${animal.status === 'adopted' ? 'bg-primary-fixed text-on-primary-fixed'
                                 : animal.status === 'sheltered' ? 'bg-secondary-container text-on-secondary-container'
-                                : 'bg-tertiary-container text-on-tertiary-fixed'}`}>
+                                  : 'bg-tertiary-container text-on-tertiary-fixed'}`}>
                               {animal.status}
                             </span>
                             <p className="text-[10px] text-on-surface-variant mt-1">{timeLabel}</p>
@@ -290,7 +290,7 @@ function Dashboard() {
                 <span className="material-symbols-outlined">notifications</span>
               </button>
             </header>
-            <AnimalList onSelectAnimal={setSelectedAnimal} />
+            <AnimalList onSelectAnimal={setSelectedAnimal} onNavigate={handleNavigate} />
           </>
         )}
 

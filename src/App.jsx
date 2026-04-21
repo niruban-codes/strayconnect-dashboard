@@ -3,6 +3,8 @@ import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+// NEW: Import the gatekeeper
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -22,7 +24,12 @@ function App() {
     </div>
   );
 
-  return currentUser ? <Dashboard /> : (
+  // UPDATED: Wrap the Dashboard in the ProtectedRoute!
+  return currentUser ? (
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  ) : (
     <div className="min-h-screen bg-surface flex items-center justify-center">
       <div className="glass-card rounded-[2rem] p-10 w-full max-w-md shadow-xl border border-outline-variant/20">
         <div className="flex items-center gap-3 mb-8 justify-center">

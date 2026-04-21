@@ -1,4 +1,3 @@
-// src/components/addAnimal.jsx
 import { useState } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
@@ -6,10 +5,13 @@ import axios from 'axios';
 
 function AddAnimal({ onSuccess }) {
   const [name, setName] = useState('');
-  const [species, setSpecies] = useState('dog');
+  // Expanded default species
+  const [species, setSpecies] = useState('');
   const [breed, setBreed] = useState('');
   const [age, setAge] = useState('');
   const [sex, setSex] = useState('unknown');
+  // NEW: Ownership Status
+  const [ownershipStatus, setOwnershipStatus] = useState('stray');
   const [location, setLocation] = useState('');
   const [shelterName, setShelterName] = useState('');
   const [shelterContact, setShelterContact] = useState('');
@@ -24,13 +26,14 @@ function AddAnimal({ onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!species) { alert("Please select a species."); return; }
     if (files.length === 0) { alert("Please select at least one image."); return; }
     setSubmitting(true);
     try {
       const cloudName = "dorhbk11x";
       const uploadPreset = "strayconnect_uploads";
       const uploadURL = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-      
+
       const uploadPromises = Array.from(files).map((file) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -40,20 +43,24 @@ function AddAnimal({ onSuccess }) {
       const responses = await Promise.all(uploadPromises);
       const uploadedUrls = responses.map((res) => res.data.secure_url);
       const animalId = await generateAnimalId();
+
       await addDoc(collection(db, 'animals'), {
         animalId, name, species,
         breed: breed || 'Unknown',
         age: age ? Number(age) : null,
         sex, location: location || 'Unknown',
-        status: 'stray', isVerified: false,
+        // Update: Saving the actual ownership status instead of hardcoding 'stray'
+        status: ownershipStatus,
+        isVerified: false,
         createdBy: 'dashboard', addedAt: new Date(),
         imageUrl: uploadedUrls[0], imageUrls: uploadedUrls,
         shelter: { name: shelterName || '', contactNumber: shelterContact || '' },
         vaccinations: [], medicalHistory: [],
       });
-      setName(''); setSpecies('dog'); setBreed(''); setAge('');
-      setSex('unknown'); setLocation(''); setShelterName('');
-      setShelterContact(''); setFiles([]);
+
+      setName(''); setSpecies(''); setBreed(''); setAge('');
+      setSex('unknown'); setOwnershipStatus('stray'); setLocation('');
+      setShelterName(''); setShelterContact(''); setFiles([]);
       e.target.reset();
       alert(`Animal registered! ID: ${animalId}`);
       if (onSuccess) onSuccess();
@@ -81,24 +88,43 @@ function AddAnimal({ onSuccess }) {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className={labelCls}>Animal Name</label>
+            <label className={labelCls}>Animal Name <span className="text-stone-400 font-normal">(Optional)</span></label>
             <input className={inputCls} type="text" placeholder="e.g. Bella"
-              value={name} onChange={e => setName(e.target.value)} required />
+              value={name} onChange={e => setName(e.target.value)} />
           </div>
+
+          {/* UPDATED: Species Dropdown */}
           <div>
             <label className={labelCls}>Species</label>
-            <select className={inputCls} value={species} onChange={e => setSpecies(e.target.value)}>
+            <select className={inputCls} value={species} onChange={e => setSpecies(e.target.value)} required>
+              <option value="" disabled>Select Species...</option>
               <option value="dog">Dog</option>
               <option value="cat">Cat</option>
+              <option value="bird">Bird</option>
+              <option value="rabbit">Rabbit</option>
+              <option value="reptile">Reptile</option>
+              <option value="livestock">Livestock</option>
               <option value="other">Other</option>
             </select>
           </div>
+
           <div>
-            <label className={labelCls}>Breed</label>
+            <label className={labelCls}>Breed / Mix</label>
             <input className={inputCls} type="text" placeholder="e.g. Sri Lankan Hound"
               value={breed} onChange={e => setBreed(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          {/* NEW: Ownership Status */}
+          <div>
+            <label className={labelCls}>Ownership Status</label>
+            <select className={inputCls} value={ownershipStatus} onChange={e => setOwnershipStatus(e.target.value)}>
+              <option value="stray">Stray / Unowned</option>
+              <option value="owned">Owned Pet</option>
+              <option value="sheltered">In Shelter Care</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 md:col-span-2">
             <div>
               <label className={labelCls}>Estimated Age (yrs)</label>
               <input className={inputCls} type="number" placeholder="e.g. 2"

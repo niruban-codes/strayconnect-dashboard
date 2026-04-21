@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 
-function AnimalList({ onSelectAnimal }) {
+// UPDATE 1: Added onNavigate to the props
+function AnimalList({ onSelectAnimal, onNavigate }) {
   const [animals, setAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -25,9 +26,9 @@ function AnimalList({ onSelectAnimal }) {
 
   const statusStyle = (status) => {
     switch (status) {
-      case 'adopted':    return 'bg-primary-fixed text-on-primary-fixed';
-      case 'sheltered':  return 'bg-secondary-container text-on-secondary-container';
-      default:           return 'bg-tertiary-container text-on-tertiary-fixed';
+      case 'adopted': return 'bg-primary-fixed text-on-primary-fixed';
+      case 'sheltered': return 'bg-secondary-container text-on-secondary-container';
+      default: return 'bg-tertiary-container text-on-tertiary-fixed';
     }
   };
 
@@ -103,7 +104,7 @@ function AnimalList({ onSelectAnimal }) {
               <div className="space-y-3 text-on-surface-variant text-sm mb-6">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-stone-400">pets</span>
-                  <span>{animal.species} · {animal.breed || 'Unknown breed'}</span>
+                  <span className="capitalize">{animal.species} · {animal.breed || 'Unknown breed'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-stone-400">info</span>
@@ -134,7 +135,8 @@ function AnimalList({ onSelectAnimal }) {
 
         {/* Add New Placeholder */}
         <div
-          onClick={() => {}}
+          // UPDATE 2: Wired up the onClick handler
+          onClick={() => onNavigate('add')}
           className="border-2 border-dashed border-outline-variant/30 rounded-[1.5rem] flex flex-col items-center justify-center p-12 text-center group cursor-pointer hover:bg-emerald-50/30 transition-all"
         >
           <div className="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
