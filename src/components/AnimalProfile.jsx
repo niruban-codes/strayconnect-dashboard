@@ -1,12 +1,20 @@
 // src/components/AnimalProfile.jsx
 import { useState } from 'react';
-import { db } from '../firebase';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+// 🚀 NEW: Added getDoc to the imports below!
+import { collection, doc, updateDoc, arrayUnion, getDocs, query, orderBy, limit, addDoc, getDoc } from 'firebase/firestore';
+import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 function AnimalProfile({ animal, onClose }) {
   const [activeTab, setActiveTab] = useState('vaccinations');
   const [addingVaccine, setAddingVaccine] = useState(false);
   const [addingMedical, setAddingMedical] = useState(false);
+
+  // Password Modal State
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
 
   const [vaccine, setVaccine] = useState('');
   const [vaccineDate, setVaccineDate] = useState('');
@@ -20,11 +28,74 @@ function AnimalProfile({ animal, onClose }) {
 
   const animalRef = doc(db, 'animals', animal.id);
 
+  const generateScId = async () => {
+    const q = query(
+      collection(db, 'animals'),
+      orderBy('animalId', 'desc'),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return 'SC-0001';
+    }
+
+    const highestAnimal = snapshot.docs[0].data();
+    const highestId = highestAnimal.animalId;
+
+    if (!highestId || !highestId.includes('SC-')) {
+      return 'SC-0001';
+    }
+
+    const currentNumber = parseInt(highestId.split('-')[1], 10);
+    const nextNumber = currentNumber + 1;
+
+    return `SC-${String(nextNumber).padStart(4, '0')}`;
+  };
+
   const handleAddVaccine = async (e) => {
     e.preventDefault();
     await updateDoc(animalRef, {
       vaccinations: arrayUnion({ vaccine, date: vaccineDate, nextDue: vaccineNextDue, givenBy: vaccineGivenBy, addedAt: new Date().toISOString() })
     });
+
+    if (animal.ownerId) {
+      // 1. In-App Notification (Database)
+      await addDoc(collection(db, 'notifications'), {
+        userId: animal.ownerId,
+        type: 'health_update',
+        title: `Vaccination Update: ${animal.name} 💉`,
+        message: `${animal.name} received the ${vaccine} vaccine.` + (vaccineNextDue ? ` Next due on ${vaccineNextDue}.` : ''),
+        animalId: animal.id,
+        isRead: false,
+        createdAt: new Date()
+      });
+
+      // 2. 🚀 NEW: Native Push Notification via Expo
+      try {
+        const userDoc = await getDoc(doc(db, 'users', animal.ownerId));
+        if (userDoc.exists() && userDoc.data().expoPushToken) {
+          await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Accept-encoding': 'gzip, deflate',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: userDoc.data().expoPushToken,
+              sound: 'default',
+              title: `Vaccination Update: ${animal.name} 💉`,
+              body: `${animal.name} received the ${vaccine} vaccine.`,
+            }),
+          });
+        }
+      } catch (err) {
+        console.error("Push Notification Error:", err);
+      }
+    }
+
     setVaccine(''); setVaccineDate(''); setVaccineNextDue(''); setVaccineGivenBy('');
     setAddingVaccine(false);
   };
@@ -34,12 +105,86 @@ function AnimalProfile({ animal, onClose }) {
     await updateDoc(animalRef, {
       medicalHistory: arrayUnion({ condition, treatedOn, notes: medNotes, treatedBy, addedAt: new Date().toISOString() })
     });
+
+    if (animal.ownerId) {
+      // 1. In-App Notification (Database)
+      await addDoc(collection(db, 'notifications'), {
+        userId: animal.ownerId,
+        type: 'health_update',
+        title: `Medical Update: ${animal.name} 🏥`,
+        message: `${animal.name}'s clinical observation for "${condition}" has been logged by the vet.`,
+        animalId: animal.id,
+        isRead: false,
+        createdAt: new Date()
+      });
+
+      // 2. 🚀 NEW: Native Push Notification via Expo
+      try {
+        const userDoc = await getDoc(doc(db, 'users', animal.ownerId));
+        if (userDoc.exists() && userDoc.data().expoPushToken) {
+          await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Accept-encoding': 'gzip, deflate',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: userDoc.data().expoPushToken,
+              sound: 'default',
+              title: `Medical Update: ${animal.name} 🏥`,
+              body: `A clinical observation for "${condition}" was just added to your pet's passport.`,
+            }),
+          });
+        }
+      } catch (err) {
+        console.error("Push Notification Error:", err);
+      }
+    }
+
     setCondition(''); setTreatedOn(''); setMedNotes(''); setTreatedBy('');
     setAddingMedical(false);
   };
 
-  const handleVerify = async () => {
-    await updateDoc(animalRef, { isVerified: true });
+  // Secure Verification Logic
+  const handleConfirmVerification = async (e) => {
+    e.preventDefault();
+    if (!adminPassword) {
+      setVerifyError('Please enter your password.');
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerifyError('');
+
+    try {
+      const user = auth.currentUser;
+
+      const credential = EmailAuthProvider.credential(user.email, adminPassword);
+      await reauthenticateWithCredential(user, credential);
+
+      const newScId = await generateScId();
+
+      await updateDoc(animalRef, {
+        isVerified: true,
+        animalId: newScId,
+        verifiedAt: new Date().toISOString(),
+        verifiedBy: user.uid
+      });
+
+      setShowVerifyModal(false);
+      setAdminPassword('');
+
+    } catch (err) {
+      console.error("Verification error:", err);
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setVerifyError('Incorrect password. Access denied.');
+      } else {
+        setVerifyError('Too many attempts or server error. Please try again later.');
+      }
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const inputCls = "w-full bg-white border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none";
@@ -51,7 +196,7 @@ function AnimalProfile({ animal, onClose }) {
       <div onClick={onClose}
         className="fixed inset-0 z-[60] bg-on-surface/40 backdrop-blur-sm" />
 
-      {/* Modal */}
+      {/* Main Profile Modal */}
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 md:p-8 pointer-events-none">
         <div className="bg-surface relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-[2rem] shadow-[0_24px_48px_-12px_rgba(21,66,18,0.15)] flex flex-col md:flex-row pointer-events-auto">
 
@@ -115,7 +260,11 @@ function AnimalProfile({ animal, onClose }) {
                   </p>
                 </div>
                 {!animal.isVerified && (
-                  <button onClick={handleVerify}
+                  <button onClick={() => {
+                    setShowVerifyModal(true);
+                    setVerifyError('');
+                    setAdminPassword('');
+                  }}
                     className="bg-tertiary-container hover:bg-tertiary-fixed text-on-tertiary-fixed font-bold px-6 py-3 rounded-full shadow-sm transition-all active:scale-95 flex items-center gap-2">
                     <span className="material-symbols-outlined text-xl">shield</span>
                     Mark as Verified
@@ -172,6 +321,7 @@ function AnimalProfile({ animal, onClose }) {
 
                   {addingVaccine && (
                     <form onSubmit={handleAddVaccine}
+
                       className="bg-secondary-fixed/20 border-2 border-dashed border-secondary-fixed p-6 rounded-2xl">
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
@@ -207,6 +357,7 @@ function AnimalProfile({ animal, onClose }) {
                       </div>
                     </form>
                   )}
+
 
                   <div className="space-y-3">
                     {animal.vaccinations?.length > 0 ? animal.vaccinations.map((v, i) => (
@@ -335,6 +486,64 @@ function AnimalProfile({ animal, onClose }) {
           </div>
         </div>
       </div>
+
+      {/* The Password Verification Modal overlay */}
+      {showVerifyModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <form onSubmit={handleConfirmVerification} className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl relative animate-in fade-in zoom-in duration-200">
+
+            <button type="button" onClick={() => setShowVerifyModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors">
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
+
+            <div className="w-16 h-16 bg-tertiary-container text-on-tertiary-fixed rounded-2xl flex items-center justify-center mb-6">
+              <span className="material-symbols-outlined text-3xl">admin_panel_settings</span>
+            </div>
+
+            <h3 className="text-2xl font-headline font-extrabold text-primary mb-2">Admin Override</h3>
+            <p className="text-on-surface-variant text-sm mb-6">
+              You are about to securely verify <strong className="text-on-surface">{animal.name}</strong> and assign an official SC ID. Please confirm your admin password to proceed.
+            </p>
+
+            <div className="mb-6">
+              <label className={labelCls}>Password</label>
+              <input
+                type="password"
+                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                placeholder="Enter your password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                autoFocus
+              />
+              {verifyError && (
+                <p className="text-red-500 text-xs mt-2 flex items-center gap-1 font-semibold">
+                  <span className="material-symbols-outlined text-[14px]">error</span>
+                  {verifyError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <button type="button" onClick={() => setShowVerifyModal(false)} disabled={isVerifying}
+                className="flex-1 py-3 font-bold text-on-surface-variant bg-surface-container-high rounded-full hover:brightness-95 transition-all">
+                Cancel
+              </button>
+              <button type="submit" disabled={isVerifying}
+                className="flex-1 py-3 font-bold text-white bg-primary rounded-full hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
+                {isVerifying ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                    Verifying...
+                  </>
+                ) : (
+                  'Confirm'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </>
   );
 }

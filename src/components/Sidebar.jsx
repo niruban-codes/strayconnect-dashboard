@@ -4,6 +4,8 @@ function Sidebar({ activePage, onNavigate, onLogout }) {
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { id: 'animals', label: 'Animals', icon: 'pets' },
     { id: 'add', label: 'Add Animal', icon: 'add_circle' },
+    // NEW: Added the Adoptions tab right here!
+    { id: 'adoptions', label: 'Adoptions', icon: 'favorite' },
     { id: 'reports', label: 'Reports', icon: 'analytics' },
     { id: 'volunteers', label: 'Volunteers', icon: 'group' },
     { id: 'events', label: 'Events', icon: 'event' },
@@ -39,9 +41,9 @@ function Sidebar({ activePage, onNavigate, onLogout }) {
 
       {/* ── BOTTOM ACTIONS ── */}
       <div className="mt-auto space-y-4">
-        
+
         {/* Emergency Rescue Button */}
-        <button 
+        <button
           onClick={() => onNavigate('emergency')}
           className="w-full bg-gradient-to-r from-primary to-primary-container text-white py-3 px-4 rounded-full font-semibold flex items-center justify-center gap-2 shadow-lg hover:brightness-105 transition-all active:scale-95"
         >
@@ -51,7 +53,7 @@ function Sidebar({ activePage, onNavigate, onLogout }) {
 
         <div className="space-y-1">
           {/* Help Center Button */}
-          <button 
+          <button
             onClick={() => onNavigate('help')}
             className={`w-full text-left flex items-center gap-3 px-4 py-2 text-xs uppercase tracking-widest font-semibold transition-all
               ${activePage === 'help' ? 'text-emerald-800' : 'text-stone-500 hover:text-emerald-800'}`}
@@ -61,7 +63,7 @@ function Sidebar({ activePage, onNavigate, onLogout }) {
           </button>
 
           {/* Logout Button */}
-          <button 
+          <button
             onClick={onLogout}
             className="w-full text-left flex items-center gap-3 px-4 py-2 text-stone-500 hover:text-red-600 text-xs uppercase tracking-widest font-semibold transition-all"
           >

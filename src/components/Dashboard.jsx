@@ -10,6 +10,7 @@ import AnimalProfile from './AnimalProfile';
 import Reports from './Reports';
 import Volunteers from './Volunteers';
 import Events from './Events';
+import AdoptionRequests from './AdoptionRequests';
 
 function useAnimatedCount(target) {
   const [count, setCount] = useState(0);
@@ -348,6 +349,10 @@ function Dashboard() {
         {/* ── EVENTS PAGE ── */}
         {activePage === 'events' && (
           <Events />
+        )}
+        {/* ── ADOPTIONS PAGE ── */}
+        {activePage === 'adoptions' && (
+          <AdoptionRequests />
         )}
         {/* ── PLACEHOLDER PAGES ── */}
         {['help', 'emergency'].includes(activePage) && (

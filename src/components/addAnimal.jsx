@@ -1,16 +1,16 @@
+// src/components/AddAnimal.jsx
 import { useState } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, updateDoc, arrayUnion, getDocs, query, orderBy, limit, addDoc } from 'firebase/firestore';
 import axios from 'axios';
-
 function AddAnimal({ onSuccess }) {
   const [name, setName] = useState('');
-  // Expanded default species
   const [species, setSpecies] = useState('');
   const [breed, setBreed] = useState('');
   const [age, setAge] = useState('');
   const [sex, setSex] = useState('unknown');
-  // NEW: Ownership Status
+
+  // Defaulting to stray for the admin dashboard
   const [ownershipStatus, setOwnershipStatus] = useState('stray');
   const [location, setLocation] = useState('');
   const [shelterName, setShelterName] = useState('');
@@ -18,10 +18,36 @@ function AddAnimal({ onSuccess }) {
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const generateAnimalId = async () => {
-    const snapshot = await getDocs(collection(db, 'animals'));
-    const count = snapshot.size + 1;
-    return `SC-${String(count).padStart(4, '0')}`;
+  const generateScId = async () => {
+    // 1. Query Firestore for the single animal with the highest animalId
+    const q = query(
+      collection(db, 'animals'),
+      orderBy('animalId', 'desc'),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+
+    // 2. If the database has no IDs at all yet, start at 1
+    if (snapshot.empty) {
+      return 'SC-0001';
+    }
+
+    // 3. Extract the highest ID (e.g., "SC-0005")
+    const highestAnimal = snapshot.docs[0].data();
+    const highestId = highestAnimal.animalId;
+
+    // 4. Safety check: If for some reason the ID is missing, default to 1
+    if (!highestId || !highestId.includes('SC-')) {
+      return 'SC-0001';
+    }
+
+    // 5. Isolate the number "0005", turn it into the integer 5, and add 1
+    const currentNumber = parseInt(highestId.split('-')[1], 10);
+    const nextNumber = currentNumber + 1;
+
+    // 6. Format it back with the leading zeros!
+    return `SC-${String(nextNumber).padStart(4, '0')}`;
   };
 
   const handleSubmit = async (e) => {
@@ -42,19 +68,19 @@ function AddAnimal({ onSuccess }) {
       });
       const responses = await Promise.all(uploadPromises);
       const uploadedUrls = responses.map((res) => res.data.secure_url);
-      const animalId = await generateAnimalId();
+      const animalId = await generateScId();
 
       await addDoc(collection(db, 'animals'), {
         animalId, name, species,
         breed: breed || 'Unknown',
         age: age ? Number(age) : null,
         sex, location: location || 'Unknown',
-        // Update: Saving the actual ownership status instead of hardcoding 'stray'
-        status: ownershipStatus,
+        status: ownershipStatus, // stray or sheltered
         isVerified: false,
         createdBy: 'dashboard', addedAt: new Date(),
         imageUrl: uploadedUrls[0], imageUrls: uploadedUrls,
-        shelter: { name: shelterName || '', contactNumber: shelterContact || '' },
+        // Only save shelter info if it is actually sheltered
+        shelter: ownershipStatus === 'sheltered' ? { name: shelterName || '', contactNumber: shelterContact || '' } : null,
         vaccinations: [], medicalHistory: [],
       });
 
@@ -77,7 +103,6 @@ function AddAnimal({ onSuccess }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
-
       {/* Basic Info */}
       <section>
         <div className="flex items-center gap-3 mb-6">
@@ -93,7 +118,6 @@ function AddAnimal({ onSuccess }) {
               value={name} onChange={e => setName(e.target.value)} />
           </div>
 
-          {/* UPDATED: Species Dropdown */}
           <div>
             <label className={labelCls}>Species</label>
             <select className={inputCls} value={species} onChange={e => setSpecies(e.target.value)} required>
@@ -114,12 +138,11 @@ function AddAnimal({ onSuccess }) {
               value={breed} onChange={e => setBreed(e.target.value)} />
           </div>
 
-          {/* NEW: Ownership Status */}
+          {/* UPDATED: Ownership Status - Admin specific */}
           <div>
-            <label className={labelCls}>Ownership Status</label>
+            <label className={labelCls}>Status</label>
             <select className={inputCls} value={ownershipStatus} onChange={e => setOwnershipStatus(e.target.value)}>
               <option value="stray">Stray / Unowned</option>
-              <option value="owned">Owned Pet</option>
               <option value="sheltered">In Shelter Care</option>
             </select>
           </div>
@@ -184,33 +207,34 @@ function AddAnimal({ onSuccess }) {
         )}
       </section>
 
-      {/* Shelter Info */}
-      <section className="bg-surface-container-low/50 rounded-2xl p-6 border border-outline-variant/10">
-        <details className="group">
-          <summary className="flex items-center justify-between cursor-pointer list-none">
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <span className="material-symbols-outlined text-sm">home_health</span>
-              </span>
-              <h3 className="text-lg font-bold text-primary font-headline">Shelter Information</h3>
+      {/* UPDATED: Conditionally Render Shelter Info */}
+      {ownershipStatus === 'sheltered' && (
+        <section className="bg-surface-container-low/50 rounded-2xl p-6 border border-outline-variant/10 animate-in fade-in slide-in-from-top-4 duration-300">
+          <details className="group" open>
+            <summary className="flex items-center justify-between cursor-pointer list-none">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-sm">home_health</span>
+                </span>
+                <h3 className="text-lg font-bold text-primary font-headline">Shelter Information</h3>
+              </div>
+            </summary>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-outline-variant/10">
+              <div>
+                <label className={labelCls}>Shelter Name</label>
+                <input className="w-full bg-white border-none rounded-xl p-3 focus:ring-2 focus:ring-primary/20 text-on-surface transition-all outline-none text-sm"
+                  type="text" value={shelterName} onChange={e => setShelterName(e.target.value)} required={ownershipStatus === 'sheltered'} />
+              </div>
+              <div>
+                <label className={labelCls}>Contact Number</label>
+                <input className="w-full bg-white border-none rounded-xl p-3 focus:ring-2 focus:ring-primary/20 text-on-surface transition-all outline-none text-sm"
+                  type="tel" placeholder="+94 XX XXX XXXX"
+                  value={shelterContact} onChange={e => setShelterContact(e.target.value)} />
+              </div>
             </div>
-            <span className="material-symbols-outlined text-stone-400 group-open:rotate-180 transition-transform">expand_more</span>
-          </summary>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-outline-variant/10">
-            <div>
-              <label className={labelCls}>Shelter Name</label>
-              <input className="w-full bg-white border-none rounded-xl p-3 focus:ring-2 focus:ring-primary/20 text-on-surface transition-all outline-none text-sm"
-                type="text" value={shelterName} onChange={e => setShelterName(e.target.value)} />
-            </div>
-            <div>
-              <label className={labelCls}>Contact Number</label>
-              <input className="w-full bg-white border-none rounded-xl p-3 focus:ring-2 focus:ring-primary/20 text-on-surface transition-all outline-none text-sm"
-                type="tel" placeholder="+94 XX XXX XXXX"
-                value={shelterContact} onChange={e => setShelterContact(e.target.value)} />
-            </div>
-          </div>
-        </details>
-      </section>
+          </details>
+        </section>
+      )}
 
       {/* Submit */}
       <div className="pt-2">
