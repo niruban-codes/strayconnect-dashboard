@@ -1,40 +1,62 @@
 // src/components/Reports.jsx
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 
 function Reports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-
-  // NEW: State to track which report is currently selected for the modal
   const [selectedReport, setSelectedReport] = useState(null);
 
-  // Use onSnapshot for real-time updates
   useEffect(() => {
     const q = query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedReports = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      const fetchedReports = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
       }));
       setReports(fetchedReports);
       setLoading(false);
     });
-
-    return () => unsubscribe(); // Cleanup listener on unmount
+    return () => unsubscribe();
   }, []);
 
-  // 🧪 TEST FUNCTION: Generate a fake report
+  const handleUpdateStatus = async (reportId, newStatus, additionalData = {}) => {
+    try {
+      await updateDoc(doc(db, 'reports', reportId), {
+        status: newStatus,
+        updatedAt: serverTimestamp(),
+        ...additionalData
+      });
+      // Optionally update the local selected report state to reflect changes immediately
+      setSelectedReport(prev => prev ? { ...prev, status: newStatus, ...additionalData } : null);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Failed to update report status.");
+    }
+  };
+
+  // 🚀 NEW: Handle Rejecting Fake Proof
+  const handleRejectProof = (reportId) => {
+    if (window.confirm("Are you sure you want to reject this proof? This will reopen the report on the public SOS feed.")) {
+      handleUpdateStatus(reportId, 'pending', {
+        proofImageUrl: null, // Clear the fake image
+        helperId: null,      // Remove the troll helper
+        helperName: null
+      });
+    }
+  };
+
   const generateTestReport = async () => {
     setIsAdding(true);
     try {
-      const reportTypes = ['lost', 'found', 'abuse'];
+      const reportTypes = ['Medical Emergency', 'Accident / Injury', 'Mother & Newborns'];
       const randomType = reportTypes[Math.floor(Math.random() * reportTypes.length)];
 
       await addDoc(collection(db, 'reports'), {
-        type: randomType,
+        incidentType: randomType,
+        animalType: 'Dog',
         location: 'Colombo 07, near Viharamahadevi Park',
         description: 'This is a system-generated test report for layout testing.',
         status: 'pending',
@@ -49,6 +71,22 @@ function Reports() {
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'resolved': return 'bg-emerald-100 text-emerald-800';
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'reviewing': return 'bg-indigo-100 text-indigo-800';
+      default: return 'bg-amber-100 text-amber-800';
+    }
+  };
+
+  const getIconColor = (type) => {
+    const t = type.toLowerCase();
+    if (t.includes('medical') || t.includes('accident')) return 'bg-red-500';
+    if (t.includes('starving') || t.includes('abuse')) return 'bg-amber-500';
+    return 'bg-sky-500';
+  };
+
   return (
     <div className="space-y-6 relative">
       <div className="flex justify-between items-center mb-6">
@@ -59,7 +97,6 @@ function Reports() {
           <h2 className="text-2xl font-bold text-primary font-headline">Incident Reports</h2>
         </div>
 
-        {/* 🧪 TEST BUTTON */}
         <button
           onClick={generateTestReport}
           disabled={isAdding}
@@ -85,20 +122,14 @@ function Reports() {
       ) : (
         <div className="grid gap-4">
           {reports.map((report) => {
-            // Handle both test reports (type) and mobile app reports (incidentType)
             const reportType = report.incidentType || report.type || 'Unknown';
-            const isAbuse = reportType.toLowerCase() === 'abuse';
-            const isLost = reportType.toLowerCase() === 'lost';
 
             return (
               <div key={report.id} className="bg-white p-6 rounded-2xl border border-outline-variant/20 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:shadow-md transition-shadow">
 
                 <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-bold
-                    ${isAbuse ? 'bg-red-500' : isLost ? 'bg-amber-500' : 'bg-sky-500'}`}>
-                    <span className="material-symbols-outlined">
-                      {isAbuse ? 'warning' : isLost ? 'search' : 'pets'}
-                    </span>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-bold ${getIconColor(reportType)}`}>
+                    <span className="material-symbols-outlined">emergency</span>
                   </div>
 
                   <div>
@@ -112,17 +143,15 @@ function Reports() {
                 </div>
 
                 <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 border-t sm:border-t-0 pt-4 sm:pt-0 border-outline-variant/10">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                    ${report.status === 'resolved' ? 'bg-emerald-100 text-emerald-800' : 'bg-tertiary-container text-on-tertiary-container'}`}>
-                    {report.status || 'Pending'}
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusColor(report.status)}`}>
+                    {(report.status || 'Pending').replace('_', ' ')}
                   </span>
 
-                  {/* UPDATE: Added onClick to open the modal */}
                   <button
                     onClick={() => setSelectedReport(report)}
                     className="text-xs font-bold text-primary hover:underline cursor-pointer"
                   >
-                    View Details
+                    View & Action
                   </button>
                 </div>
 
@@ -137,12 +166,11 @@ function Reports() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm">
           <div className="bg-surface rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
 
-            {/* Modal Header */}
             <div className="flex justify-between items-center p-6 border-b border-outline-variant/20 bg-surface-container-lowest">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-primary text-2xl">assignment</span>
                 <h3 className="text-xl font-bold font-headline text-primary capitalize">
-                  {selectedReport.incidentType || selectedReport.type} Report Details
+                  {selectedReport.incidentType || selectedReport.type}
                 </h3>
               </div>
               <button onClick={() => setSelectedReport(null)} className="p-2 bg-surface-variant rounded-full text-on-surface-variant hover:bg-outline-variant/30 transition-colors">
@@ -150,9 +178,7 @@ function Reports() {
               </button>
             </div>
 
-            {/* Modal Content */}
             <div className="p-6 overflow-y-auto">
-              {/* Check for image from mobile (imageUrl) or fallback */}
               {selectedReport.imageUrl ? (
                 <div className="w-full h-64 rounded-2xl overflow-hidden mb-6 bg-surface-variant border border-outline-variant/20">
                   <img src={selectedReport.imageUrl} alt="Report attachment" className="w-full h-full object-cover" />
@@ -190,10 +216,10 @@ function Reports() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-outline-variant uppercase tracking-wider mb-1">Reported On</p>
-                    <p className="text-on-surface font-medium">
-                      {selectedReport.createdAt?.toDate ? selectedReport.createdAt.toDate().toLocaleString() : 'Recently'}
-                    </p>
+                    <p className="text-xs font-bold text-outline-variant uppercase tracking-wider mb-1">Current Status</p>
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mt-1 ${getStatusColor(selectedReport.status)}`}>
+                      {(selectedReport.status || 'pending').replace('_', ' ')}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -205,20 +231,81 @@ function Reports() {
                 </div>
               </div>
 
+              {selectedReport.status === 'reviewing' && selectedReport.proofImageUrl && (
+                <div className="mt-6 pt-6 border-t border-outline-variant/20">
+                  <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="material-symbols-outlined text-blue-700">camera_check</span>
+                      <h4 className="font-bold text-blue-900">Proof of Rescue Submitted</h4>
+                    </div>
+                    <div className="w-full h-48 rounded-xl overflow-hidden mb-4 border border-blue-200 shadow-sm">
+                      <img src={selectedReport.proofImageUrl} alt="Proof of Rescue" className="w-full h-full object-cover" />
+                    </div>
+                    <p className="text-sm text-blue-800">
+                      <strong>{selectedReport.helperName || 'A community member'}</strong> has submitted this photo indicating the animal is secured. Please review and officially resolve this ticket.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Modal Footer Actions */}
-            <div className="p-6 border-t border-outline-variant/20 bg-surface-container-lowest flex justify-end gap-3">
-              <button
-                onClick={() => setSelectedReport(null)}
-                className="px-5 py-2.5 rounded-full font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
-              >
-                Close
-              </button>
-              <button className="px-5 py-2.5 rounded-full font-bold text-white bg-primary hover:brightness-110 transition-colors flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                Register Animal
-              </button>
+            <div className="p-6 border-t border-outline-variant/20 bg-surface-container-lowest flex flex-wrap justify-between items-center gap-3">
+
+              <div className="flex gap-2">
+                {selectedReport.status !== 'in_progress' && selectedReport.status !== 'resolved' && selectedReport.status !== 'reviewing' && (
+                  <button
+                    onClick={() => handleUpdateStatus(selectedReport.id, 'in_progress')}
+                    className="px-4 py-2 rounded-full font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 transition-colors flex items-center gap-2 text-sm"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">local_shipping</span>
+                    Dispatch Rescue
+                  </button>
+                )}
+
+                {/* 🚀 NEW: Reject & Reopen Button */}
+                {selectedReport.status === 'reviewing' && (
+                  <>
+                    <button
+                      onClick={() => handleRejectProof(selectedReport.id)}
+                      className="px-4 py-2 rounded-full font-bold text-red-700 bg-red-100 hover:bg-red-200 transition-colors flex items-center gap-2 text-sm shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">cancel</span>
+                      Reject Proof
+                    </button>
+                    <button
+                      onClick={() => handleUpdateStatus(selectedReport.id, 'resolved')}
+                      className="px-4 py-2 rounded-full font-bold text-emerald-800 bg-emerald-200 hover:bg-emerald-300 transition-colors flex items-center gap-2 text-sm shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">verified</span>
+                      Verify & Resolve
+                    </button>
+                  </>
+                )}
+
+                {(selectedReport.status === 'pending' || selectedReport.status === 'in_progress') && (
+                  <button
+                    onClick={() => handleUpdateStatus(selectedReport.id, 'resolved')}
+                    className="px-4 py-2 rounded-full font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 transition-colors flex items-center gap-2 text-sm"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">task_alt</span>
+                    Mark Resolved
+                  </button>
+                )}
+              </div>
+
+              <div className="flex gap-2 ml-auto">
+                <button
+                  onClick={() => setSelectedReport(null)}
+                  className="px-5 py-2.5 rounded-full font-bold text-on-surface-variant bg-surface-variant hover:bg-outline-variant/30 transition-colors text-sm"
+                >
+                  Close
+                </button>
+                <button className="px-5 py-2.5 rounded-full font-bold text-white bg-primary hover:brightness-110 transition-colors flex items-center gap-2 text-sm">
+                  <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                  Register Animal
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
