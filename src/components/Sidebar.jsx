@@ -7,7 +7,6 @@ function Sidebar({ activePage, onNavigate, onLogout }) {
     // NEW: Added the Adoptions tab right here!
     { id: 'adoptions', label: 'Adoptions', icon: 'favorite' },
     { id: 'reports', label: 'Reports', icon: 'analytics' },
-    { id: 'volunteers', label: 'Volunteers', icon: 'group' },
     { id: 'events', label: 'Events', icon: 'event' },
   ];
 
