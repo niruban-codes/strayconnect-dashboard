@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Urbanist:wght@400;500;600;700;800;900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
 
 @tailwind base;
@@ -26,6 +26,7 @@
 }
 
 body {
-  background-color: #faf9f6;
-  font-family: "Be Vietnam Pro", sans-serif;
+  background-color: #F7DBA7;
+  /* StrayConnect Primary Background */
+  font-family: "Urbanist", sans-serif;
 }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { db } from '../firebase';
 import { collection, doc, updateDoc, arrayUnion, getDocs, query, orderBy, limit, addDoc } from 'firebase/firestore';
 import axios from 'axios';
+
 function AddAnimal({ onSuccess }) {
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('');
@@ -97,23 +98,23 @@ function AddAnimal({ onSuccess }) {
     }
   };
 
-  const inputCls = "w-full bg-surface/50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-stone-400 transition-all outline-none text-sm";
-  const labelCls = "text-sm font-semibold text-on-surface-variant ml-1 block mb-2";
-  const sectionIconCls = "w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-primary flex-shrink-0";
+  const inputCls = "w-full bg-stone-100/50 border border-[#003459]/10 rounded-2xl p-4 focus:ring-2 focus:ring-[#00A7E7]/30 text-[#00171F] font-['Urbanist'] font-semibold placeholder:text-[#52616B]/60 transition-all outline-none text-sm";
+  const labelCls = "text-sm font-extrabold text-[#003459] font-['Urbanist'] ml-1 block mb-2 tracking-wide";
+  const sectionIconCls = "w-10 h-10 rounded-[12px] bg-[#00A7E7]/10 flex items-center justify-center text-[#00A7E7] flex-shrink-0";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
       {/* Basic Info */}
       <section>
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-4 mb-8">
           <span className={sectionIconCls}>
-            <span className="material-symbols-outlined text-sm">info</span>
+            <span className="material-symbols-outlined text-[22px]">info</span>
           </span>
-          <h3 className="text-xl font-bold text-primary font-headline">Basic Information</h3>
+          <h3 className="text-xl font-black text-[#003459] font-['Poppins'] tracking-tight">Basic Information</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className={labelCls}>Animal Name <span className="text-stone-400 font-normal">(Optional)</span></label>
+            <label className={labelCls}>Animal Name <span className="text-[#52616B] font-medium ml-1">(Optional)</span></label>
             <input className={inputCls} type="text" placeholder="e.g. Bella"
               value={name} onChange={e => setName(e.target.value)} />
           </div>
@@ -138,7 +139,7 @@ function AddAnimal({ onSuccess }) {
               value={breed} onChange={e => setBreed(e.target.value)} />
           </div>
 
-          {/* UPDATED: Ownership Status - Admin specific */}
+          {/* Ownership Status - Admin specific */}
           <div>
             <label className={labelCls}>Status</label>
             <select className={inputCls} value={ownershipStatus} onChange={e => setOwnershipStatus(e.target.value)}>
@@ -167,11 +168,11 @@ function AddAnimal({ onSuccess }) {
 
       {/* Location */}
       <section>
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-4 mb-8">
           <span className={sectionIconCls}>
-            <span className="material-symbols-outlined text-sm">location_on</span>
+            <span className="material-symbols-outlined text-[22px]">location_on</span>
           </span>
-          <h3 className="text-xl font-bold text-primary font-headline">Rescue Location</h3>
+          <h3 className="text-xl font-black text-[#003459] font-['Poppins'] tracking-tight">Rescue Location</h3>
         </div>
         <div>
           <label className={labelCls}>Area / City</label>
@@ -182,23 +183,23 @@ function AddAnimal({ onSuccess }) {
 
       {/* Photos */}
       <section>
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-4 mb-8">
           <span className={sectionIconCls}>
-            <span className="material-symbols-outlined text-sm">photo_camera</span>
+            <span className="material-symbols-outlined text-[22px]">photo_camera</span>
           </span>
-          <h3 className="text-xl font-bold text-primary font-headline">Gallery & Identification</h3>
+          <h3 className="text-xl font-black text-[#003459] font-['Poppins'] tracking-tight">Gallery & Identification</h3>
         </div>
-        <label className="border-2 border-dashed border-outline-variant/40 rounded-[1.5rem] p-10 flex flex-col items-center justify-center bg-surface/30 hover:bg-emerald-50/30 transition-colors cursor-pointer group">
-          <span className="material-symbols-outlined text-4xl text-stone-400 group-hover:text-primary transition-colors mb-2">cloud_upload</span>
-          <p className="text-on-surface font-medium">Drag and drop photos here</p>
-          <p className="text-stone-400 text-xs mt-1 uppercase tracking-widest">Supports JPG, PNG up to 10MB</p>
+        <label className="border-2 border-dashed border-[#003459]/20 rounded-[1.5rem] p-10 flex flex-col items-center justify-center bg-stone-100/30 hover:bg-[#003459]/5 transition-colors cursor-pointer group">
+          <span className="material-symbols-outlined text-4xl text-[#52616B]/50 group-hover:text-[#00A7E7] transition-colors mb-2">cloud_upload</span>
+          <p className="text-[#00171F] font-['Urbanist'] font-bold">Drag and drop photos here</p>
+          <p className="text-[#52616B] font-['Urbanist'] font-semibold text-xs mt-1 uppercase tracking-widest">Supports JPG, PNG up to 10MB</p>
           <input type="file" accept="image/*" multiple className="hidden"
             onChange={e => setFiles(e.target.files)} required />
         </label>
         {files.length > 0 && (
           <div className="mt-4 flex gap-3 flex-wrap">
             {Array.from(files).map((file, i) => (
-              <div key={i} className="w-16 h-16 rounded-xl overflow-hidden border-2 border-primary">
+              <div key={i} className="w-16 h-16 rounded-xl overflow-hidden border-2 border-[#003459]">
                 <img src={URL.createObjectURL(file)} alt=""
                   className="w-full h-full object-cover" />
               </div>
@@ -207,27 +208,27 @@ function AddAnimal({ onSuccess }) {
         )}
       </section>
 
-      {/* UPDATED: Conditionally Render Shelter Info */}
+      {/* Conditionally Render Shelter Info */}
       {ownershipStatus === 'sheltered' && (
-        <section className="bg-surface-container-low/50 rounded-2xl p-6 border border-outline-variant/10 animate-in fade-in slide-in-from-top-4 duration-300">
+        <section className="bg-stone-50 rounded-2xl p-6 border border-[#003459]/10 animate-in fade-in slide-in-from-top-4 duration-300">
           <details className="group" open>
             <summary className="flex items-center justify-between cursor-pointer list-none">
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                  <span className="material-symbols-outlined text-sm">home_health</span>
+                <span className="w-10 h-10 rounded-[12px] bg-[#FF912C]/10 flex items-center justify-center text-[#FF912C]">
+                  <span className="material-symbols-outlined text-[22px]">home_health</span>
                 </span>
-                <h3 className="text-lg font-bold text-primary font-headline">Shelter Information</h3>
+                <h3 className="text-lg font-black text-[#003459] font-['Poppins'] tracking-tight">Shelter Information</h3>
               </div>
             </summary>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-outline-variant/10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-[#003459]/10">
               <div>
                 <label className={labelCls}>Shelter Name</label>
-                <input className="w-full bg-white border-none rounded-xl p-3 focus:ring-2 focus:ring-primary/20 text-on-surface transition-all outline-none text-sm"
+                <input className="w-full bg-white border border-[#003459]/10 rounded-xl p-3 focus:ring-2 focus:ring-[#00A7E7]/30 text-[#00171F] font-['Urbanist'] font-semibold transition-all outline-none text-sm"
                   type="text" value={shelterName} onChange={e => setShelterName(e.target.value)} required={ownershipStatus === 'sheltered'} />
               </div>
               <div>
                 <label className={labelCls}>Contact Number</label>
-                <input className="w-full bg-white border-none rounded-xl p-3 focus:ring-2 focus:ring-primary/20 text-on-surface transition-all outline-none text-sm"
+                <input className="w-full bg-white border border-[#003459]/10 rounded-xl p-3 focus:ring-2 focus:ring-[#00A7E7]/30 text-[#00171F] font-['Urbanist'] font-semibold placeholder:text-[#52616B]/50 transition-all outline-none text-sm"
                   type="tel" placeholder="+94 XX XXX XXXX"
                   value={shelterContact} onChange={e => setShelterContact(e.target.value)} />
               </div>
@@ -237,15 +238,12 @@ function AddAnimal({ onSuccess }) {
       )}
 
       {/* Submit */}
-      <div className="pt-2">
+      <div className="pt-4">
         <button type="submit" disabled={submitting}
-          className="w-full py-5 px-8 rounded-full bg-gradient-to-r from-primary to-primary-container text-white font-bold text-lg shadow-xl shadow-emerald-900/10 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed">
+          className="w-full py-5 px-8 rounded-full bg-[#003459] text-white font-['Urbanist'] font-extrabold text-lg shadow-lg shadow-[#003459]/20 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed tracking-wide">
           <span className="material-symbols-outlined">app_registration</span>
           {submitting ? 'Registering...' : 'Register Animal'}
         </button>
-        <p className="text-center text-stone-400 text-xs mt-4 tracking-widest uppercase">
-          Saving one life at a time since 2024
-        </p>
       </div>
 
     </form>

@@ -1,0 +1,35 @@
+/* Container for the whole layout */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-auto-rows: 200px;
+  gap: 1.5rem;
+  padding: 2rem;
+  position: relative;
+  z-index: 10; /* Ensures it sits above the AuroraBackground */
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Base styling for the cards */
+.bento-card {
+  background: rgba(30, 41, 59, 0.7); /* Dark slate with transparency */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Utility classes to make cards span multiple rows/columns */
+.col-span-2 { grid-column: span 2; }
+.row-span-2 { grid-row: span 2; }
+
+@media (max-width: 768px) {
+  .col-span-2 { grid-column: span 1; }
+  .row-span-2 { grid-row: span 1; }
+}

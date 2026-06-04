@@ -30,16 +30,7 @@ function App() {
       <Dashboard />
     </ProtectedRoute>
   ) : (
-    <div className="min-h-screen bg-surface flex items-center justify-center">
-      <div className="glass-card rounded-[2rem] p-10 w-full max-w-md shadow-xl border border-outline-variant/20">
-        <div className="flex items-center gap-3 mb-8 justify-center">
-          <span className="material-symbols-outlined text-primary text-4xl"
-            style={{ fontVariationSettings: "'FILL' 1" }}>pets</span>
-          <h1 className="font-headline font-extrabold text-3xl text-primary">StrayConnect</h1>
-        </div>
-        <Login />
-      </div>
-    </div>
+    <Login />
   );
 }
 
