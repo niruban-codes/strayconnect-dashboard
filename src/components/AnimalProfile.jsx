@@ -1,7 +1,10 @@
 // src/components/AnimalProfile.jsx
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { db, auth } from '../firebase';
-import { collection, doc, updateDoc, arrayUnion, getDocs, query, orderBy, limit, addDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { verifyPassport } from '../utils/passport';
+import { saveMedicalRecord } from '../utils/medicalRecord';
+import { sendHealthPush } from '../services/healthNotifications';
 import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 function AnimalProfile({ animal, onClose }) {
@@ -27,122 +30,41 @@ function AnimalProfile({ animal, onClose }) {
 
   const animalRef = doc(db, 'animals', animal.id);
 
-  const generateScId = async () => {
-    const q = query(
-      collection(db, 'animals'),
-      orderBy('animalId', 'desc'),
-      limit(1)
-    );
+  const [savingRecord, setSavingRecord] = useState(false);
+  const recordLock = useRef(false);
+  const pendingRecordIds = useRef({});
 
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-      return 'SC-0001';
-    }
-
-    const highestAnimal = snapshot.docs[0].data();
-    const highestId = highestAnimal.animalId;
-
-    if (!highestId || !highestId.includes('SC-')) {
-      return 'SC-0001';
-    }
-
-    const currentNumber = parseInt(highestId.split('-')[1], 10);
-    const nextNumber = currentNumber + 1;
-
-    return `SC-${String(nextNumber).padStart(4, '0')}`;
+  const saveRecord = async (field, fields, title, message, onSuccess) => {
+    if (recordLock.current) return;
+    recordLock.current = true;
+    setSavingRecord(true);
+    try {
+      if (!auth.currentUser) throw new Error('Please sign in again.');
+      const id = pendingRecordIds.current[field] ||= doc(collection(db, 'notifications')).id;
+      const record = { ...fields, id, addedAt: new Date().toISOString(), enteredBy: auth.currentUser.uid };
+      const notification = await runTransaction(db, tx => saveMedicalRecord(tx, animalRef,
+        doc(db, 'notifications', id), field, record, title, message, serverTimestamp()));
+      delete pendingRecordIds.current[field];
+      onSuccess();
+      // Push is best-effort after the record and in-app notification commit together.
+      sendHealthPush(notification).catch(error => console.error('Push delivery failed:', error));
+    } catch (error) {
+      alert(`Record save could not be confirmed. Retry to safely check/save this entry. ${error.message}`);
+    } finally { recordLock.current = false; setSavingRecord(false); }
   };
-
-  const handleAddVaccine = async (e) => {
+  const handleAddVaccine = async e => {
     e.preventDefault();
-    await updateDoc(animalRef, {
-      vaccinations: arrayUnion({ vaccine, date: vaccineDate, nextDue: vaccineNextDue, givenBy: vaccineGivenBy, addedAt: new Date().toISOString() })
-    });
-
-    if (animal.ownerId) {
-      // 1. In-App Notification (Database)
-      await addDoc(collection(db, 'notifications'), {
-        userId: animal.ownerId,
-        type: 'health_update',
-        title: `Vaccination Update: ${animal.name} 💉`,
-        message: `${animal.name} received the ${vaccine} vaccine.` + (vaccineNextDue ? ` Next due on ${vaccineNextDue}.` : ''),
-        animalId: animal.id,
-        isRead: false,
-        createdAt: new Date()
+    await saveRecord('vaccinations', { vaccine, date: vaccineDate, nextDue: vaccineNextDue, givenBy: vaccineGivenBy },
+      `Vaccination Update: ${animal.name}`, `${animal.name} received ${vaccine}.` + (vaccineNextDue ? ` Next due on ${vaccineNextDue}.` : ''), () => {
+        setVaccine(''); setVaccineDate(''); setVaccineNextDue(''); setVaccineGivenBy(''); setAddingVaccine(false);
       });
-
-      // 2. Native Push Notification via Expo
-      try {
-        const userDoc = await getDoc(doc(db, 'users', animal.ownerId));
-        if (userDoc.exists() && userDoc.data().expoPushToken) {
-          await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Accept-encoding': 'gzip, deflate',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              to: userDoc.data().expoPushToken,
-              sound: 'default',
-              title: `Vaccination Update: ${animal.name} 💉`,
-              body: `${animal.name} received the ${vaccine} vaccine.`,
-            }),
-          });
-        }
-      } catch (err) {
-        console.error("Push Notification Error:", err);
-      }
-    }
-
-    setVaccine(''); setVaccineDate(''); setVaccineNextDue(''); setVaccineGivenBy('');
-    setAddingVaccine(false);
   };
-
-  const handleAddMedical = async (e) => {
+  const handleAddMedical = async e => {
     e.preventDefault();
-    await updateDoc(animalRef, {
-      medicalHistory: arrayUnion({ condition, treatedOn, notes: medNotes, treatedBy, addedAt: new Date().toISOString() })
-    });
-
-    if (animal.ownerId) {
-      // 1. In-App Notification (Database)
-      await addDoc(collection(db, 'notifications'), {
-        userId: animal.ownerId,
-        type: 'health_update',
-        title: `Medical Update: ${animal.name} 🏥`,
-        message: `${animal.name}'s clinical observation for "${condition}" has been logged by the vet.`,
-        animalId: animal.id,
-        isRead: false,
-        createdAt: new Date()
+    await saveRecord('medicalHistory', { condition, treatedOn, notes: medNotes, treatedBy },
+      `Medical Update: ${animal.name}`, `A clinical observation for "${condition}" was added to ${animal.name}'s passport.`, () => {
+        setCondition(''); setTreatedOn(''); setMedNotes(''); setTreatedBy(''); setAddingMedical(false);
       });
-
-      // 2. Native Push Notification via Expo
-      try {
-        const userDoc = await getDoc(doc(db, 'users', animal.ownerId));
-        if (userDoc.exists() && userDoc.data().expoPushToken) {
-          await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Accept-encoding': 'gzip, deflate',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              to: userDoc.data().expoPushToken,
-              sound: 'default',
-              title: `Medical Update: ${animal.name} 🏥`,
-              body: `A clinical observation for "${condition}" was just added to your pet's passport.`,
-            }),
-          });
-        }
-      } catch (err) {
-        console.error("Push Notification Error:", err);
-      }
-    }
-
-    setCondition(''); setTreatedOn(''); setMedNotes(''); setTreatedBy('');
-    setAddingMedical(false);
   };
 
   // Secure Verification Logic
@@ -162,14 +84,7 @@ function AnimalProfile({ animal, onClose }) {
       const credential = EmailAuthProvider.credential(user.email, adminPassword);
       await reauthenticateWithCredential(user, credential);
 
-      const newScId = await generateScId();
-
-      await updateDoc(animalRef, {
-        isVerified: true,
-        animalId: newScId,
-        verifiedAt: new Date().toISOString(),
-        verifiedBy: user.uid
-      });
+      await runTransaction(db, tx => verifyPassport(tx, animalRef, user.uid, serverTimestamp()));
 
       setShowVerifyModal(false);
       setAdminPassword('');
@@ -310,7 +225,7 @@ function AnimalProfile({ animal, onClose }) {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h3 className="font-['Poppins'] text-xl font-black text-[#003459]">Immunization Records</h3>
-                    <button onClick={() => setAddingVaccine(!addingVaccine)}
+                    <button disabled={savingRecord || animal.status === 'archived'} onClick={() => setAddingVaccine(!addingVaccine)}
                       className="text-[#00A7E7] hover:bg-[#00A7E7]/10 px-4 py-2 rounded-xl text-sm font-extrabold flex items-center gap-2 transition-colors">
                       <span className="material-symbols-outlined text-lg">add_circle</span>
                       Add Vaccine
@@ -347,7 +262,7 @@ function AnimalProfile({ animal, onClose }) {
                           className="px-4 py-2 text-sm font-bold text-[#52616B] hover:text-[#FF564F] transition-colors">
                           Cancel
                         </button>
-                        <button type="submit"
+                        <button type="submit" disabled={savingRecord || isVerifying || animal.status === 'archived'}
                           className="bg-[#003459] text-white px-6 py-2.5 rounded-full text-sm font-extrabold shadow-md hover:bg-[#00A7E7] transition-all active:scale-95">
                           Save Record
                         </button>
@@ -393,7 +308,7 @@ function AnimalProfile({ animal, onClose }) {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h3 className="font-['Poppins'] text-xl font-black text-[#003459]">Clinical Observations</h3>
-                    <button onClick={() => setAddingMedical(!addingMedical)}
+                    <button disabled={savingRecord || animal.status === 'archived'} onClick={() => setAddingMedical(!addingMedical)}
                       className="text-[#00A7E7] hover:bg-[#00A7E7]/10 px-4 py-2 rounded-xl text-sm font-extrabold flex items-center gap-2 transition-colors">
                       <span className="material-symbols-outlined text-lg">add_circle</span>
                       Add Medical Record
@@ -428,7 +343,7 @@ function AnimalProfile({ animal, onClose }) {
                       <div className="flex justify-end gap-3">
                         <button type="button" onClick={() => setAddingMedical(false)}
                           className="px-4 py-2 text-sm font-bold text-[#52616B] hover:text-[#FF564F] transition-colors">Cancel</button>
-                        <button type="submit"
+                        <button type="submit" disabled={savingRecord || isVerifying || animal.status === 'archived'}
                           className="bg-[#003459] text-white px-6 py-2.5 rounded-full text-sm font-extrabold shadow-md hover:bg-[#00A7E7] active:scale-95 transition-all">
                           Save Record
                         </button>
@@ -526,7 +441,7 @@ function AnimalProfile({ animal, onClose }) {
                 className="flex-1 py-3.5 font-bold text-[#52616B] bg-stone-100 rounded-full hover:bg-stone-200 transition-all">
                 Cancel
               </button>
-              <button type="submit" disabled={isVerifying}
+              <button type="submit" disabled={savingRecord || isVerifying || animal.status === 'archived'}
                 className="flex-1 py-3.5 font-extrabold text-white bg-[#003459] rounded-full hover:bg-[#00A7E7] active:scale-95 transition-all flex items-center justify-center gap-2">
                 {isVerifying ? (
                   <>

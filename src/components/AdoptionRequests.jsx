@@ -1,7 +1,8 @@
 // src/components/AdoptionRequests.jsx
 import { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { reviewAdoption } from '../utils/adoptionReview';
 
 function AdoptionRequests() {
     const [requests, setRequests] = useState([]);
@@ -22,25 +23,15 @@ function AdoptionRequests() {
         if (!window.confirm(`Approve adoption of ${request.animalName} by ${request.userName}?`)) return;
 
         try {
-            // Step A: Mark the request as approved
-            await updateDoc(doc(db, 'adoptionRequests', request.id), {
-                status: 'approved',
-                processedAt: new Date()
-            });
-
-            // Step B: IMPORTANT! Change the actual animal's status to 'adopted'
-            // This automatically updates the mobile app so no one else can apply!
-            await updateDoc(doc(db, 'animals', request.animalId), {
-                status: 'adopted',
-                ownerId: request.userId,
-                adoptedBy: request.userId,
-                adoptedAt: new Date()
-            });
+            await runTransaction(db, transaction => reviewAdoption(
+                transaction, doc(db, 'adoptionRequests', request.id),
+                animalId => doc(db, 'animals', animalId), 'approved', serverTimestamp()
+            ));
 
             alert('Adoption Approved! The animal status is now updated.');
         } catch (error) {
             console.error("Error approving adoption:", error);
-            alert('Failed to approve adoption.');
+            alert(error.message || 'Failed to approve adoption.');
         }
     };
 
@@ -49,13 +40,13 @@ function AdoptionRequests() {
         if (!window.confirm('Are you sure you want to reject this application?')) return;
 
         try {
-            await updateDoc(doc(db, 'adoptionRequests', requestId), {
-                status: 'rejected',
-                processedAt: new Date()
-            });
+            await runTransaction(db, transaction => reviewAdoption(
+                transaction, doc(db, 'adoptionRequests', requestId),
+                animalId => doc(db, 'animals', animalId), 'rejected', serverTimestamp()
+            ));
         } catch (error) {
             console.error("Error rejecting adoption:", error);
-            alert('Failed to reject adoption.');
+            alert(error.message || 'Failed to reject adoption.');
         }
     };
 

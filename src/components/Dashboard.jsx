@@ -10,6 +10,7 @@ import AnimalProfile from './AnimalProfile';
 import Reports from './Reports';
 import Events from './Events';
 import AdoptionRequests from './AdoptionRequests';
+import { countRecentAdoptions } from '../utils/adoptionStats';
 
 function useAnimatedCount(target) {
   const [count, setCount] = useState(0);
@@ -48,12 +49,8 @@ function Dashboard() {
   // Derived stats
   const totalRegistered = animals.length;
   const verifiedHealthy = animals.filter(a => a.isVerified).length;
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const adoptionsThisWeek = animals.filter(a => {
-    if (a.status !== 'adopted') return false;
-    const added = a.addedAt?.toDate ? a.addedAt.toDate() : new Date(a.addedAt);
-    return added >= oneWeekAgo;
-  }).length;
+  const adoptionsThisWeek = countRecentAdoptions(animals);
+  const liveSelectedAnimal = animals.find(animal => animal.id === selectedAnimal?.id);
   const pendingUnverified = animals.filter(a => !a.isVerified).length;
 
   const dogs = animals.filter(a => a.species === 'dog').length;
@@ -350,9 +347,9 @@ function Dashboard() {
       </main>
 
       {/* Animal Profile Modal */}
-      {selectedAnimal && (
-        <AnimalProfile
-          animal={selectedAnimal}
+      {liveSelectedAnimal && (
+        <AnimalProfile key={liveSelectedAnimal.id}
+          animal={liveSelectedAnimal}
           onClose={() => setSelectedAnimal(null)}
         />
       )}

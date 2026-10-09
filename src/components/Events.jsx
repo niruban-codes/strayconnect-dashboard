@@ -1,14 +1,12 @@
 // src/components/Events.jsx
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, addDoc, Timestamp, doc, updateDoc } from 'firebase/firestore';
+// 🚀 NEW: Imported deleteDoc
+import { collection, onSnapshot, query, orderBy, addDoc, Timestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 function Events() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
-
-  // 🚀 NEW: Tab state to switch between Live and Pending events
   const [activeTab, setActiveTab] = useState('live');
 
   useEffect(() => {
@@ -25,9 +23,8 @@ function Events() {
     return () => unsubscribe();
   }, []);
 
-  // 🚀 NEW: Helper to send notifications to the mobile app
   const notifyUser = async (userId, title, message) => {
-    if (!userId) return; // Skip if it's a test event without a user
+    if (!userId) return;
 
     try {
       await addDoc(collection(db, 'notifications'), {
@@ -43,7 +40,6 @@ function Events() {
     }
   };
 
-  // 🚀 NEW: Approve Logic
   const handleApprove = async (event) => {
     if (window.confirm(`Are you sure you want to approve "${event.title}"? It will go live immediately.`)) {
       try {
@@ -59,11 +55,10 @@ function Events() {
     }
   };
 
-  // 🚀 NEW: Reject Logic
   const handleReject = async (event) => {
     const reason = window.prompt("Why is this event being rejected? (The user will see this reason)");
 
-    if (reason !== null) { // If they didn't click Cancel
+    if (reason !== null) {
       try {
         await updateDoc(doc(db, 'events', event.id), {
           status: 'rejected',
@@ -80,9 +75,19 @@ function Events() {
     }
   };
 
-  // Filter events based on the active tab
+  // 🚀 NEW: Logic to delete an already live event
+  const handleDeleteLiveEvent = async (eventId, eventTitle) => {
+    if (window.confirm(`Are you sure you want to permanently delete "${eventTitle}"? This cannot be undone.`)) {
+      try {
+        await deleteDoc(doc(db, 'events', eventId));
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        alert("Failed to delete the event.");
+      }
+    }
+  };
+
   const pendingEvents = events.filter(e => e.status === 'pending');
-  // Include 'upcoming' to support your old test events, and 'approved' for new ones
   const liveEvents = events.filter(e => e.status === 'approved' || e.status === 'upcoming');
 
   const displayEvents = activeTab === 'pending' ? pendingEvents : liveEvents;
@@ -99,7 +104,6 @@ function Events() {
         </div>
       </div>
 
-      {/* 🚀 NEW: Tabs Navigation */}
       <div className="flex gap-6 border-b border-[#003459]/10 pb-2 mb-8">
         <button
           onClick={() => setActiveTab('live')}
@@ -137,14 +141,12 @@ function Events() {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {displayEvents.map((event) => {
-            // Handle dates safely whether it's a string from the app or a Firestore Timestamp
             const displayDate = event.dateString || (event.date?.toDate ? event.date.toDate().toLocaleDateString() : 'Unknown Date');
 
             return (
               <div key={event.id} className="bg-white p-6 rounded-[2rem] border border-[#003459]/10 shadow-sm flex flex-col gap-4 hover:shadow-md transition-shadow">
 
                 <div className="flex gap-5">
-                  {/* Poster Image or Placeholder */}
                   {event.imageUrl ? (
                     <img src={event.imageUrl} alt="Event Poster" className="w-28 h-28 object-cover rounded-2xl border border-[#003459]/5 shadow-sm" />
                   ) : (
@@ -153,7 +155,6 @@ function Events() {
                     </div>
                   )}
 
-                  {/* Event Details */}
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <div className="flex justify-between items-start mb-1.5">
                       <h3 className="font-black font-['Poppins'] text-[#003459] text-xl truncate pr-2">{event.title}</h3>
@@ -179,32 +180,42 @@ function Events() {
                   </div>
                 </div>
 
-                {/* Description Snippet */}
                 {event.description && (
                   <div className="bg-stone-50 p-4 rounded-2xl border border-[#003459]/5 mt-2">
                     <p className="text-sm text-[#00171F] font-medium leading-relaxed line-clamp-2">{event.description}</p>
                   </div>
                 )}
 
-                {/* 🚀 NEW: Admin Action Buttons (Only show if pending) */}
-                {activeTab === 'pending' && (
-                  <div className="flex items-center gap-3 mt-auto pt-4 border-t border-[#003459]/5">
+                {/* ── ADMIN ACTIONS ── */}
+                <div className="flex items-center gap-3 mt-auto pt-4 border-t border-[#003459]/5">
+                  {activeTab === 'pending' ? (
+                    <>
+                      <button
+                        onClick={() => handleApprove(event)}
+                        className="flex-1 bg-[#003459] text-white font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-[#00A7E7] transition-all shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                        Approve & Publish
+                      </button>
+                      <button
+                        onClick={() => handleReject(event)}
+                        className="flex-1 bg-[#FF564F]/10 text-[#FF564F] font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-[#FF564F] hover:text-white transition-all shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">cancel</span>
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    // 🚀 NEW: Delete Button for Live Events
                     <button
-                      onClick={() => handleApprove(event)}
-                      className="flex-1 bg-[#003459] text-white font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-[#00A7E7] transition-all shadow-sm"
+                      onClick={() => handleDeleteLiveEvent(event.id, event.title)}
+                      className="w-full bg-[#FF564F]/10 text-[#FF564F] font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-[#FF564F] hover:text-white transition-all shadow-sm"
                     >
-                      <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                      Approve & Publish
+                      <span className="material-symbols-outlined text-[18px]">delete_forever</span>
+                      Remove Event
                     </button>
-                    <button
-                      onClick={() => handleReject(event)}
-                      className="flex-1 bg-[#FF564F]/10 text-[#FF564F] font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-[#FF564F] hover:text-white transition-all shadow-sm"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">cancel</span>
-                      Reject
-                    </button>
-                  </div>
-                )}
+                  )}
+                </div>
 
               </div>
             );

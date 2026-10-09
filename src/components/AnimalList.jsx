@@ -1,7 +1,9 @@
 // src/components/AnimalList.jsx
 import { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { collection, onSnapshot, query, orderBy, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+
+import { archivePassport } from '../utils/passport';
 
 // UPDATE 1: Added onNavigate to the props
 function AnimalList({ onSelectAnimal, onNavigate }) {
@@ -18,10 +20,13 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
     return () => unsubscribe();
   }, []);
 
-  const handleDelete = async (e, animalId) => {
+  const handleArchive = async (e, animalId) => {
     e.stopPropagation();
-    if (!window.confirm('Delete this animal?')) return;
-    await deleteDoc(doc(db, 'animals', animalId));
+    if (!window.confirm('Archive this animal? Its passport and medical history will be preserved.')) return;
+    try {
+      if (!auth.currentUser) throw new Error('Please sign in again.');
+      await runTransaction(db, tx => archivePassport(tx, doc(db, 'animals', animalId), auth.currentUser.uid, serverTimestamp()));
+    } catch (error) { alert(error.message || 'Could not archive animal.'); }
   };
 
   const statusStyle = (status) => {
@@ -128,11 +133,11 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
                   View Profile
                 </button>
                 <button
-                  onClick={(e) => handleDelete(e, animal.id)}
+                  onClick={(e) => handleArchive(e, animal.id)}
                   className="p-3 bg-[#FF564F]/10 text-[#FF564F] rounded-xl hover:bg-[#FF564F] hover:text-white transition-all shadow-sm"
-                  title="Delete Record"
+                  title="Archive Record" disabled={animal.status === 'archived'}
                 >
-                  <span className="material-symbols-outlined block text-[20px]">delete</span>
+                  <span className="material-symbols-outlined block text-[20px]">archive</span>
                 </button>
               </div>
             </div>

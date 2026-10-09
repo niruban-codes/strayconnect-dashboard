@@ -50,15 +50,6 @@ function Sidebar({ activePage, onNavigate, onLogout }) {
       {/* ── BOTTOM ACTIONS ── */}
       <div className="mt-auto space-y-4">
 
-        {/* Emergency Rescue Button */}
-        <button
-          onClick={() => onNavigate('emergency')}
-          className="w-full bg-[#FF564F] text-white py-3 px-4 rounded-full font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#FF564F]/30 hover:brightness-105 transition-all active:scale-95"
-        >
-          <span className="material-symbols-outlined text-lg">emergency</span>
-          Emergency Rescue
-        </button>
-
         <div className="space-y-1">
           {/* Help Center Button */}
           <button

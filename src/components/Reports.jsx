@@ -1,13 +1,23 @@
 // src/components/Reports.jsx
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, runTransaction, doc } from 'firebase/firestore';
+
+import { transitionRescue } from '../utils/rescueTransition';
 
 function Reports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
+  const [selectedReportId, setSelectedReportId] = useState(null);
+  const selectedReport = reports.find(report => report.id === selectedReportId);
+  const [responders, setResponders] = useState([]);
+  const [responderId, setResponderId] = useState('');
+  const [updating, setUpdating] = useState(false);
+  const [responderError, setResponderError] = useState('');
+  useEffect(() => onSnapshot(collection(db, 'users'), snapshot => {
+    setResponders(snapshot.docs.map(item => ({ ...item.data(), id: item.id })));
+  }, () => setResponderError('Unable to load responders. Check access permissions and reload.')), []);
 
   useEffect(() => {
     const q = query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
@@ -22,31 +32,32 @@ function Reports() {
     return () => unsubscribe();
   }, []);
 
-  const handleUpdateStatus = async (reportId, newStatus, additionalData = {}) => {
+  const handleUpdateStatus = async (reportId, newStatus) => {
+    if (updating) return;
+    const responder = responders.find(user => user.id === responderId);
+    if (newStatus === 'in_progress' && !responder) {
+      alert('Select the person who will handle this rescue.'); return;
+    }
+    if (newStatus === 'pending' && !window.confirm('Reject this proof and reopen the rescue?')) return;
+    setUpdating(true);
     try {
-      await updateDoc(doc(db, 'reports', reportId), {
-        status: newStatus,
-        updatedAt: serverTimestamp(),
-        ...additionalData
+      const action = { in_progress: 'claim', reviewing: 'proof', pending: 'reject', resolved: 'resolve' }[newStatus];
+      const actor = action === 'claim'
+        ? { uid: responder.id, name: responder.name || responder.email, dispatchedBy: auth.currentUser?.uid }
+        : { uid: auth.currentUser?.uid };
+      await runTransaction(db, async tx => {
+        if (!auth.currentUser) throw new Error('Please sign in again.');
+        if (action === 'claim') {
+          const user = await tx.get(doc(db, 'users', responder.id));
+          if (!user.exists()) throw new Error('This responder no longer exists. Select another person.');
+        }
+        await transitionRescue(tx, doc(db, 'reports', reportId), action, actor, serverTimestamp(), undefined, selectedReport);
       });
-      // Optionally update the local selected report state to reflect changes immediately
-      setSelectedReport(prev => prev ? { ...prev, status: newStatus, ...additionalData } : null);
     } catch (error) {
-      console.error("Error updating status:", error);
-      alert("Failed to update report status.");
-    }
+      alert(error.message || 'Failed to update report.');
+    } finally { setUpdating(false); }
   };
-
-  // 🚀 Handle Rejecting Fake Proof
-  const handleRejectProof = (reportId) => {
-    if (window.confirm("Are you sure you want to reject this proof? This will reopen the report on the public SOS feed.")) {
-      handleUpdateStatus(reportId, 'pending', {
-        proofImageUrl: null, // Clear the fake image
-        helperId: null,      // Remove the troll helper
-        helperName: null
-      });
-    }
-  };
+  const handleRejectProof = reportId => handleUpdateStatus(reportId, 'pending');
 
   const generateTestReport = async () => {
     setIsAdding(true);
@@ -148,7 +159,7 @@ function Reports() {
                   </span>
 
                   <button
-                    onClick={() => setSelectedReport(report)}
+                    onClick={() => { setSelectedReportId(report.id); setResponderId(''); }}
                     className="text-xs font-extrabold text-[#00A7E7] hover:text-[#003459] transition-colors cursor-pointer flex items-center gap-1"
                   >
                     View & Action <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
@@ -173,7 +184,7 @@ function Reports() {
                   {selectedReport.incidentType || selectedReport.type}
                 </h3>
               </div>
-              <button onClick={() => setSelectedReport(null)} className="w-10 h-10 bg-white border border-[#003459]/5 rounded-full text-[#00171F] hover:bg-stone-100 transition-colors flex items-center justify-center shadow-sm">
+              <button onClick={() => setSelectedReportId(null)} className="w-10 h-10 bg-white border border-[#003459]/5 rounded-full text-[#00171F] hover:bg-stone-100 transition-colors flex items-center justify-center shadow-sm">
                 <span className="material-symbols-outlined text-xl">close</span>
               </button>
             </div>
@@ -251,9 +262,17 @@ function Reports() {
 
             <div className="p-6 sm:p-8 border-t border-[#003459]/10 bg-stone-50 flex flex-wrap justify-between items-center gap-4">
 
-              <div className="flex gap-3">
-                {selectedReport.status !== 'in_progress' && selectedReport.status !== 'resolved' && selectedReport.status !== 'reviewing' && (
+              <div className="flex flex-wrap gap-3">
+                {responderError && <p role="alert">{responderError}</p>}
+                {(selectedReport.status === 'pending' || (selectedReport.status === 'in_progress' && !selectedReport.helperId)) && (
+                  <select aria-label="Rescue responder" value={responderId} onChange={e => setResponderId(e.target.value)} disabled={updating}>
+                    <option value="">Select responder</option>
+                    {responders.map(user => <option key={user.id} value={user.id}>{user.name || user.email || user.id}</option>)}
+                  </select>
+                )}
+                {(selectedReport.status === 'pending' || (selectedReport.status === 'in_progress' && !selectedReport.helperId)) && (
                   <button
+                    disabled={updating || !responderId || !!responderError}
                     onClick={() => handleUpdateStatus(selectedReport.id, 'in_progress')}
                     className="px-5 py-2.5 rounded-xl font-extrabold text-white bg-[#00A7E7] hover:bg-[#003459] transition-colors flex items-center gap-2 text-sm shadow-md"
                   >
@@ -266,14 +285,16 @@ function Reports() {
                 {selectedReport.status === 'reviewing' && (
                   <>
                     <button
-                      onClick={() => handleRejectProof(selectedReport.id)}
+                      disabled={updating}
+                    onClick={() => handleRejectProof(selectedReport.id)}
                       className="px-5 py-2.5 rounded-xl font-extrabold text-[#FF564F] bg-[#FF564F]/10 hover:bg-[#FF564F] hover:text-white transition-colors flex items-center gap-2 text-sm shadow-sm"
                     >
                       <span className="material-symbols-outlined text-[18px]">cancel</span>
                       Reject Proof
                     </button>
                     <button
-                      onClick={() => handleUpdateStatus(selectedReport.id, 'resolved')}
+                      disabled={updating}
+                    onClick={() => handleUpdateStatus(selectedReport.id, 'resolved')}
                       className="px-5 py-2.5 rounded-xl font-extrabold text-emerald-700 bg-emerald-100 hover:bg-emerald-600 hover:text-white transition-colors flex items-center gap-2 text-sm shadow-sm"
                     >
                       <span className="material-symbols-outlined text-[18px]">verified</span>
@@ -284,6 +305,7 @@ function Reports() {
 
                 {(selectedReport.status === 'pending' || selectedReport.status === 'in_progress') && (
                   <button
+                    disabled={updating}
                     onClick={() => handleUpdateStatus(selectedReport.id, 'resolved')}
                     className="px-5 py-2.5 rounded-xl font-extrabold text-emerald-700 bg-emerald-100 hover:bg-emerald-600 hover:text-white transition-colors flex items-center gap-2 text-sm shadow-sm"
                   >
@@ -295,7 +317,7 @@ function Reports() {
 
               <div className="flex gap-3 ml-auto">
                 <button
-                  onClick={() => setSelectedReport(null)}
+                  onClick={() => setSelectedReportId(null)}
                   className="px-6 py-2.5 rounded-xl font-extrabold text-[#52616B] bg-white border border-[#003459]/10 hover:bg-stone-100 transition-colors text-sm shadow-sm"
                 >
                   Close

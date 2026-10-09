@@ -1,7 +1,8 @@
 // src/components/AddAnimal.jsx
 import { useState } from 'react';
 import { db } from '../firebase';
-import { collection, doc, updateDoc, arrayUnion, getDocs, query, orderBy, limit, addDoc } from 'firebase/firestore';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { passportId } from '../utils/passport';
 import axios from 'axios';
 
 function AddAnimal({ onSuccess }) {
@@ -18,38 +19,6 @@ function AddAnimal({ onSuccess }) {
   const [shelterContact, setShelterContact] = useState('');
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-
-  const generateScId = async () => {
-    // 1. Query Firestore for the single animal with the highest animalId
-    const q = query(
-      collection(db, 'animals'),
-      orderBy('animalId', 'desc'),
-      limit(1)
-    );
-
-    const snapshot = await getDocs(q);
-
-    // 2. If the database has no IDs at all yet, start at 1
-    if (snapshot.empty) {
-      return 'SC-0001';
-    }
-
-    // 3. Extract the highest ID (e.g., "SC-0005")
-    const highestAnimal = snapshot.docs[0].data();
-    const highestId = highestAnimal.animalId;
-
-    // 4. Safety check: If for some reason the ID is missing, default to 1
-    if (!highestId || !highestId.includes('SC-')) {
-      return 'SC-0001';
-    }
-
-    // 5. Isolate the number "0005", turn it into the integer 5, and add 1
-    const currentNumber = parseInt(highestId.split('-')[1], 10);
-    const nextNumber = currentNumber + 1;
-
-    // 6. Format it back with the leading zeros!
-    return `SC-${String(nextNumber).padStart(4, '0')}`;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,9 +38,10 @@ function AddAnimal({ onSuccess }) {
       });
       const responses = await Promise.all(uploadPromises);
       const uploadedUrls = responses.map((res) => res.data.secure_url);
-      const animalId = await generateScId();
+      const animalRef = doc(collection(db, 'animals'));
+      const animalId = passportId(animalRef.id);
 
-      await addDoc(collection(db, 'animals'), {
+      await setDoc(animalRef, {
         animalId, name, species,
         breed: breed || 'Unknown',
         age: age ? Number(age) : null,
