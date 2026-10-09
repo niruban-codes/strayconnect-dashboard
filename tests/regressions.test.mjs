@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { reviewAdoption } from '../src/utils/adoptionReview.js';
 import { countRecentAdoptions } from '../src/utils/adoptionStats.js';
 
-function fixture(request = { status: 'pending', animalId: 'pet', userId: 'new-owner' }, animal = { status: 'sheltered', ownerId: 'old-owner', medicalHistory: ['record'] }) {
+function fixture(request = { status: 'pending', animalId: 'pet', userId: 'new-owner' }, animal = { status: 'sheltered', isVerified: true, ownerId: 'old-owner', medicalHistory: ['record'] }) {
   const docs = { request, pet: animal };
   const writes = [];
   const transaction = {

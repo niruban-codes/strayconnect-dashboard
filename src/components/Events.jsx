@@ -1,10 +1,16 @@
+import { useFeedStatus } from '../hooks/useFeedStatus';
+import FeedError from './FeedError';
 // src/components/Events.jsx
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 // 🚀 NEW: Imported deleteDoc
-import { collection, onSnapshot, query, orderBy, addDoc, Timestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, deleteDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
+
+import { reviewEvent } from '../utils/eventReview';
+import { eventDateLabel } from '../utils/eventDate';
 
 function Events() {
+  const { error: feedError, fail: failFeed, retry, retryKey } = useFeedStatus();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('live');
@@ -18,61 +24,26 @@ function Events() {
       }));
       setEvents(fetchedEvents);
       setLoading(false);
-    });
+    }, error => { setLoading(false); failFeed(error); });
 
     return () => unsubscribe();
-  }, []);
+  }, [retryKey, failFeed]);
 
-  const notifyUser = async (userId, title, message) => {
-    if (!userId) return;
-
+  const handleApprove = async event => {
+    if (!window.confirm(`Approve "${event.title}"?`)) return;
     try {
-      await addDoc(collection(db, 'notifications'), {
-        userId: userId,
-        title: title,
-        message: message,
-        isRead: false,
-        type: 'event_update',
-        createdAt: new Date(),
-      });
-    } catch (error) {
-      console.error("Error sending notification:", error);
-    }
+      await runTransaction(db, tx => reviewEvent(tx, doc(db, 'events', event.id),
+        doc(db, 'notifications', `event-${event.id}`), 'approved', '', serverTimestamp()));
+    } catch (error) { alert(error.message); }
   };
-
-  const handleApprove = async (event) => {
-    if (window.confirm(`Are you sure you want to approve "${event.title}"? It will go live immediately.`)) {
-      try {
-        await updateDoc(doc(db, 'events', event.id), { status: 'approved' });
-        await notifyUser(
-          event.userId,
-          "Event Approved! 🎉",
-          `Great news! Your event "${event.title}" has been approved by the sanctuary and is now live on the community feed.`
-        );
-      } catch (error) {
-        alert("Error approving event.");
-      }
-    }
-  };
-
-  const handleReject = async (event) => {
-    const reason = window.prompt("Why is this event being rejected? (The user will see this reason)");
-
-    if (reason !== null) {
-      try {
-        await updateDoc(doc(db, 'events', event.id), {
-          status: 'rejected',
-          rejectReason: reason
-        });
-        await notifyUser(
-          event.userId,
-          "Event Application Update",
-          `Unfortunately, your event "${event.title}" was not approved. Reason: ${reason || 'Does not meet community guidelines.'}`
-        );
-      } catch (error) {
-        alert("Error rejecting event.");
-      }
-    }
+  const handleReject = async event => {
+    const reason = window.prompt('Why is this event being rejected?');
+    if (reason === null) return;
+    if (!reason.trim()) { alert('Please give the organizer a reason.'); return; }
+    try {
+      await runTransaction(db, tx => reviewEvent(tx, doc(db, 'events', event.id),
+        doc(db, 'notifications', `event-${event.id}`), 'rejected', reason, serverTimestamp()));
+    } catch (error) { alert(error.message); }
   };
 
   // 🚀 NEW: Logic to delete an already live event
@@ -91,6 +62,8 @@ function Events() {
   const liveEvents = events.filter(e => e.status === 'approved' || e.status === 'upcoming');
 
   const displayEvents = activeTab === 'pending' ? pendingEvents : liveEvents;
+
+  if (feedError) return <FeedError message={feedError} onRetry={retry} />;
 
   return (
     <div className="space-y-6 font-['Urbanist']">
@@ -141,7 +114,7 @@ function Events() {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {displayEvents.map((event) => {
-            const displayDate = event.dateString || (event.date?.toDate ? event.date.toDate().toLocaleDateString() : 'Unknown Date');
+            const displayDate = eventDateLabel(event);
 
             return (
               <div key={event.id} className="bg-white p-6 rounded-[2rem] border border-[#003459]/10 shadow-sm flex flex-col gap-4 hover:shadow-md transition-shadow">

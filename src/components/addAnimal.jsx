@@ -1,20 +1,21 @@
 // src/components/AddAnimal.jsx
 import { useState } from 'react';
-import { db } from '../firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { collection, doc, setDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { passportId } from '../utils/passport';
+import { registerRescueAnimal } from '../utils/rescueIntake';
 import axios from 'axios';
 
-function AddAnimal({ onSuccess }) {
+function AddAnimal({ onSuccess, report }) {
   const [name, setName] = useState('');
-  const [species, setSpecies] = useState('');
+  const [species, setSpecies] = useState(report?.animalType?.toLowerCase() || '');
   const [breed, setBreed] = useState('');
   const [age, setAge] = useState('');
   const [sex, setSex] = useState('unknown');
 
   // Defaulting to stray for the admin dashboard
   const [ownershipStatus, setOwnershipStatus] = useState('stray');
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState(report?.location || '');
   const [shelterName, setShelterName] = useState('');
   const [shelterContact, setShelterContact] = useState('');
   const [files, setFiles] = useState([]);
@@ -23,9 +24,11 @@ function AddAnimal({ onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!species) { alert("Please select a species."); return; }
-    if (files.length === 0) { alert("Please select at least one image."); return; }
+    if (submitting) return;
+    if (files.length === 0 && !report?.imageUrl) { alert("Please select at least one image."); return; }
     setSubmitting(true);
     try {
+      if (!auth.currentUser) throw new Error('Please sign in again.');
       const cloudName = "dorhbk11x";
       const uploadPreset = "strayconnect_uploads";
       const uploadURL = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
@@ -37,29 +40,32 @@ function AddAnimal({ onSuccess }) {
         return axios.post(uploadURL, formData);
       });
       const responses = await Promise.all(uploadPromises);
-      const uploadedUrls = responses.map((res) => res.data.secure_url);
-      const animalRef = doc(collection(db, 'animals'));
+      const uploadedUrls = responses.length ? responses.map((res) => res.data.secure_url) : [report.imageUrl];
+      const animalRef = report ? doc(db, 'animals', `rescue-${report.id}`) : doc(collection(db, 'animals'));
       const animalId = passportId(animalRef.id);
 
-      await setDoc(animalRef, {
+      const data = {
         animalId, name, species,
         breed: breed || 'Unknown',
         age: age ? Number(age) : null,
         sex, location: location || 'Unknown',
         status: ownershipStatus, // stray or sheltered
         isVerified: false,
-        createdBy: 'dashboard', addedAt: new Date(),
+        createdBy: auth.currentUser.uid, addedAt: serverTimestamp(),
         imageUrl: uploadedUrls[0], imageUrls: uploadedUrls,
         // Only save shelter info if it is actually sheltered
         shelter: ownershipStatus === 'sheltered' ? { name: shelterName || '', contactNumber: shelterContact || '' } : null,
         vaccinations: [], medicalHistory: [],
-      });
+      };
+      let registeredId = animalRef.id;
+      if (report) registeredId = await runTransaction(db, tx => registerRescueAnimal(tx, doc(db, 'reports', report.id), animalRef, data, auth.currentUser.uid, serverTimestamp()));
+      else await setDoc(animalRef, data);
 
       setName(''); setSpecies(''); setBreed(''); setAge('');
       setSex('unknown'); setOwnershipStatus('stray'); setLocation('');
       setShelterName(''); setShelterContact(''); setFiles([]);
       e.target.reset();
-      alert(`Animal registered! ID: ${animalId}`);
+      alert(registeredId === animalRef.id ? `Animal registered! ID: ${animalId}` : 'This report already has an animal passport. Open it from the report.');
       if (onSuccess) onSuccess();
     } catch (error) {
       alert('Failed to add animal: ' + error.message);
@@ -74,6 +80,7 @@ function AddAnimal({ onSuccess }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
+      {report && <p className="p-4 bg-white rounded-xl">Registering from a rescue report. Location, species and the report photo are prefilled; you can replace the photo.</p>}
       {/* Basic Info */}
       <section>
         <div className="flex items-center gap-4 mb-8">
@@ -164,8 +171,9 @@ function AddAnimal({ onSuccess }) {
           <p className="text-[#00171F] font-['Urbanist'] font-bold">Drag and drop photos here</p>
           <p className="text-[#52616B] font-['Urbanist'] font-semibold text-xs mt-1 uppercase tracking-widest">Supports JPG, PNG up to 10MB</p>
           <input type="file" accept="image/*" multiple className="hidden"
-            onChange={e => setFiles(e.target.files)} required />
+            onChange={e => setFiles(e.target.files)} required={!report?.imageUrl} />
         </label>
+        {report?.imageUrl && files.length === 0 && <img src={report.imageUrl} alt="Photo from rescue report" className="mt-4 w-32 h-32 object-cover rounded-xl" />}
         {files.length > 0 && (
           <div className="mt-4 flex gap-3 flex-wrap">
             {Array.from(files).map((file, i) => (

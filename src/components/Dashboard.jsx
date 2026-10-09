@@ -1,3 +1,5 @@
+import { useFeedStatus } from '../hooks/useFeedStatus';
+import FeedError from './FeedError';
 // src/components/Dashboard.jsx
 import { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
@@ -30,8 +32,10 @@ function useAnimatedCount(target) {
 }
 
 function Dashboard() {
+  const { error: feedError, fail: failFeed, retry, retryKey } = useFeedStatus();
   const [activePage, setActivePage] = useState('dashboard');
   const [selectedAnimal, setSelectedAnimal] = useState(null);
+  const [intakeReport, setIntakeReport] = useState(null);
   const [animals, setAnimals] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -40,9 +44,9 @@ function Dashboard() {
     const unsub = onSnapshot(q, (snap) => {
       setAnimals(snap.docs.map(d => ({ ...d.data(), id: d.id })));
       setStatsLoading(false);
-    });
+    }, error => { setStatsLoading(false); failFeed(error); });
     return () => unsub();
-  }, []);
+  }, [retryKey, failFeed]);
 
   const handleLogout = () => signOut(auth);
 
@@ -65,9 +69,12 @@ function Dashboard() {
   const animPending = useAnimatedCount(pendingUnverified);
 
   const handleNavigate = (page) => {
+    setIntakeReport(null);
     setActivePage(page);
     setSelectedAnimal(null);
   };
+
+  if (feedError) return <FeedError message={feedError} onRetry={retry} />;
 
   return (
     <div className="flex min-h-screen bg-[#F7DBA7] font-['Urbanist'] text-[#00171F]">
@@ -303,7 +310,7 @@ function Dashboard() {
             </header>
             <div className="grid grid-cols-12 gap-8">
               <div className="col-span-12 lg:col-span-8 bg-white rounded-[2rem] p-8 shadow-sm border border-[#003459]/10">
-                <AddAnimal onSuccess={() => handleNavigate('animals')} />
+                <AddAnimal key={intakeReport?.id || 'manual'} report={intakeReport} onSuccess={() => handleNavigate('animals')} />
               </div>
               <div className="col-span-12 lg:col-span-4 space-y-8">
                 <div className="bg-[#003459] text-white rounded-[2rem] p-8 shadow-md">
@@ -327,7 +334,13 @@ function Dashboard() {
         )}
 
         {/* ── REPORTS PAGE ── */}
-        {activePage === 'reports' && <Reports />}
+        {activePage === 'reports' && <Reports onRegisterAnimal={report => {
+          if (report.linkedAnimalId) {
+            const animal = animals.find(item => item.id === report.linkedAnimalId);
+            if (animal) setSelectedAnimal(animal);
+            else alert('Linked passport is unavailable. Reload and check your access.');
+          } else { setIntakeReport(report); setActivePage('add'); }
+        }} />}
         {/* ── VOLUNTEERS PAGE ── */}
         {activePage === 'volunteers' && <Volunteers />}
         {/* ── EVENTS PAGE ── */}

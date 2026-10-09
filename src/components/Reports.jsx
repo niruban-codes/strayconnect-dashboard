@@ -1,3 +1,5 @@
+import { useFeedStatus } from '../hooks/useFeedStatus';
+import FeedError from './FeedError';
 // src/components/Reports.jsx
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
@@ -5,7 +7,8 @@ import { collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, runTra
 
 import { transitionRescue } from '../utils/rescueTransition';
 
-function Reports() {
+function Reports({ onRegisterAnimal }) {
+  const { error: feedError, fail: failFeed, retry, retryKey } = useFeedStatus();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -28,9 +31,9 @@ function Reports() {
       }));
       setReports(fetchedReports);
       setLoading(false);
-    });
+    }, error => { setLoading(false); failFeed(error); });
     return () => unsubscribe();
-  }, []);
+  }, [retryKey, failFeed]);
 
   const handleUpdateStatus = async (reportId, newStatus) => {
     if (updating) return;
@@ -97,6 +100,8 @@ function Reports() {
     if (t.includes('starving') || t.includes('abuse')) return 'bg-[#FF912C]';
     return 'bg-[#00A7E7]';
   };
+
+  if (feedError) return <FeedError message={feedError} onRetry={retry} />;
 
   return (
     <div className="space-y-6 relative font-['Urbanist']">
@@ -322,9 +327,9 @@ function Reports() {
                 >
                   Close
                 </button>
-                <button className="px-6 py-2.5 rounded-xl font-extrabold text-white bg-[#003459] hover:bg-[#00A7E7] transition-colors flex items-center gap-2 text-sm shadow-md">
+                <button disabled={!selectedReport.linkedAnimalId && !['reviewing', 'resolved'].includes(selectedReport.status)} onClick={() => onRegisterAnimal(selectedReport)} className="px-6 py-2.5 rounded-xl font-extrabold text-white bg-[#003459] hover:bg-[#00A7E7] transition-colors flex items-center gap-2 text-sm shadow-md">
                   <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                  Register Animal
+                  {selectedReport.linkedAnimalId ? 'Open Animal Passport' : 'Register Animal'}
                 </button>
               </div>
 

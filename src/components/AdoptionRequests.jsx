@@ -1,12 +1,17 @@
+import { useFeedStatus } from '../hooks/useFeedStatus';
+import FeedError from './FeedError';
 // src/components/AdoptionRequests.jsx
 import { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, runTransaction, serverTimestamp, getDocs, where } from 'firebase/firestore';
 import { reviewAdoption } from '../utils/adoptionReview';
 
 function AdoptionRequests() {
+  const { error: feedError, fail: failFeed, retry, retryKey } = useFeedStatus();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [processing, setProcessing] = useState(false);
+    const reviewOptions = { requestRefForId: id => doc(db, 'adoptionRequests', id), notificationRefForId: id => doc(db, 'notifications', `adoption-${id}`) };
 
     // Listen to the adoptionRequests collection in real-time
     useEffect(() => {
@@ -14,47 +19,55 @@ function AdoptionRequests() {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setRequests(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
             setLoading(false);
-        });
+        }, error => { setLoading(false); failFeed(error); });
         return () => unsubscribe();
-    }, []);
+    }, [retryKey, failFeed]);
 
     // 1. Handle Approval
     const handleApprove = async (request) => {
         if (!window.confirm(`Approve adoption of ${request.animalName} by ${request.userName}?`)) return;
 
+        if (processing) return;
+        setProcessing(true);
         try {
+            const legacy = await getDocs(query(collection(db, 'adoptionRequests'), where('animalId', '==', request.animalId)));
             await runTransaction(db, transaction => reviewAdoption(
                 transaction, doc(db, 'adoptionRequests', request.id),
-                animalId => doc(db, 'animals', animalId), 'approved', serverTimestamp()
+                animalId => doc(db, 'animals', animalId), 'approved', serverTimestamp(), { ...reviewOptions, legacyIds: legacy.docs.filter(item => item.data().status === 'pending').map(item => item.id) }
             ));
 
             alert('Adoption Approved! The animal status is now updated.');
         } catch (error) {
             console.error("Error approving adoption:", error);
             alert(error.message || 'Failed to approve adoption.');
-        }
+        } finally { setProcessing(false); }
     };
 
     // 2. Handle Rejection
     const handleReject = async (requestId) => {
         if (!window.confirm('Are you sure you want to reject this application?')) return;
 
+        if (processing) return;
+        setProcessing(true);
         try {
             await runTransaction(db, transaction => reviewAdoption(
                 transaction, doc(db, 'adoptionRequests', requestId),
-                animalId => doc(db, 'animals', animalId), 'rejected', serverTimestamp()
+                animalId => doc(db, 'animals', animalId), 'rejected', serverTimestamp(), reviewOptions
             ));
         } catch (error) {
             console.error("Error rejecting adoption:", error);
             alert(error.message || 'Failed to reject adoption.');
-        }
+        } finally { setProcessing(false); }
     };
 
     const statusColors = {
+        closed: 'bg-stone-100 text-stone-600',
         pending: 'bg-[#FF912C]/10 text-[#FF912C]',
         approved: 'bg-emerald-100 text-emerald-700',
         rejected: 'bg-[#FF564F]/10 text-[#FF564F]'
     };
+
+  if (feedError) return <FeedError message={feedError} onRetry={retry} />;
 
     if (loading) return (
         <div className="flex items-center justify-center h-64 text-[#52616B] font-['Urbanist'] font-bold">
@@ -96,10 +109,10 @@ function AdoptionRequests() {
                                 {/* Action Buttons (Only show if pending) */}
                                 {req.status === 'pending' && (
                                     <div className="flex gap-2 mt-auto pt-4">
-                                        <button onClick={() => handleApprove(req)} className="flex-1 bg-[#003459] text-white py-2.5 rounded-xl text-sm font-extrabold hover:bg-[#00A7E7] transition-all flex justify-center items-center gap-1 shadow-sm">
+                                        <button disabled={processing} onClick={() => handleApprove(req)} className="flex-1 bg-[#003459] text-white py-2.5 rounded-xl text-sm font-extrabold hover:bg-[#00A7E7] transition-all flex justify-center items-center gap-1 shadow-sm">
                                             <span className="material-symbols-outlined text-[18px]">check_circle</span> Approve
                                         </button>
-                                        <button onClick={() => handleReject(req.id)} className="flex-1 bg-[#FF564F]/10 text-[#FF564F] py-2.5 rounded-xl text-sm font-extrabold hover:bg-[#FF564F] hover:text-white transition-all flex justify-center items-center gap-1">
+                                        <button disabled={processing} onClick={() => handleReject(req.id)} className="flex-1 bg-[#FF564F]/10 text-[#FF564F] py-2.5 rounded-xl text-sm font-extrabold hover:bg-[#FF564F] hover:text-white transition-all flex justify-center items-center gap-1">
                                             <span className="material-symbols-outlined text-[18px]">cancel</span> Reject
                                         </button>
                                     </div>

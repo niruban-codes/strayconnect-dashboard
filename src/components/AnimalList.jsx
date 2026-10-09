@@ -1,3 +1,5 @@
+import { useFeedStatus } from '../hooks/useFeedStatus';
+import FeedError from './FeedError';
 // src/components/AnimalList.jsx
 import { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
@@ -7,6 +9,7 @@ import { archivePassport } from '../utils/passport';
 
 // UPDATE 1: Added onNavigate to the props
 function AnimalList({ onSelectAnimal, onNavigate }) {
+  const { error: feedError, fail: failFeed, retry, retryKey } = useFeedStatus();
   const [animals, setAnimals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -16,9 +19,9 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setAnimals(snapshot.docs.map(d => ({ ...d.data(), id: d.id })));
       setLoading(false);
-    });
+    }, error => { setLoading(false); failFeed(error); });
     return () => unsubscribe();
-  }, []);
+  }, [retryKey, failFeed]);
 
   const handleArchive = async (e, animalId) => {
     e.stopPropagation();
@@ -42,6 +45,8 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
     a.name?.toLowerCase().includes(search.toLowerCase()) ||
     a.animalId?.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (feedError) return <FeedError message={feedError} onRetry={retry} />;
 
   if (loading) return (
     <div className="flex items-center justify-center h-64 text-[#52616B] font-['Urbanist'] font-bold">
