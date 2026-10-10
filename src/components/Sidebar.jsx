@@ -1,78 +1,33 @@
-// src/components/Sidebar.jsx
+import { createElement } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { LayoutDashboard, PawPrint, Plus, Heart, Siren, CalendarDays, LogOut, Menu, X, CircleHelp } from 'lucide-react';
 import logo from '../assets/images/sc-logo.png';
-
-function Sidebar({ activePage, onNavigate, onLogout }) {
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { id: 'animals', label: 'Animals', icon: 'pets' },
-    { id: 'add', label: 'Add Animal', icon: 'add_circle' },
-    { id: 'adoptions', label: 'Adoptions', icon: 'favorite' },
-    { id: 'reports', label: 'Reports', icon: 'analytics' },
-    { id: 'events', label: 'Events', icon: 'event' },
-  ];
-
-  return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-white/80 backdrop-blur-xl border-r border-[#003459]/10 flex flex-col py-8 px-4 gap-2 z-40 text-sm tracking-wide font-['Urbanist'] text-[#00171F]">
-
-      {/* ── BRANDING ── */}
-      <div className="mb-10 px-4">
-        <div className="flex items-center gap-3 mb-1">
-          <img
-            src={logo}
-            alt="StrayConnect Logo"
-            className="w-8 h-8 rounded-md object-contain"
-          />
-          <h1 className="text-[#003459] font-['Poppins'] font-black text-xl tracking-tight">
-            StrayConnect
-          </h1>
-        </div>
-        <p className="text-[#52616B] text-xs ml-11 font-bold">Vet Dashboard</p>
-      </div>
-
-      {/* ── MAIN NAVIGATION ── */}
-      <nav className="flex-1 space-y-1">
-        {navItems.map(item => (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-left
-              ${activePage === item.id
-                ? 'bg-[#003459]/10 text-[#003459] font-extrabold'
-                : 'text-[#52616B] hover:text-[#003459] hover:bg-[#003459]/5 hover:translate-x-1 font-semibold'
-              }`}
-          >
-            <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {/* ── BOTTOM ACTIONS ── */}
-      <div className="mt-auto space-y-4">
-
-        <div className="space-y-1">
-          {/* Help Center Button */}
-          <button
-            onClick={() => onNavigate('help')}
-            className={`w-full text-left flex items-center gap-3 px-4 py-2 text-xs uppercase tracking-widest transition-all
-              ${activePage === 'help' ? 'text-[#003459] font-extrabold' : 'text-[#52616B] font-bold hover:text-[#003459]'}`}
-          >
-            <span className="material-symbols-outlined text-base">help</span>
-            Help Center
-          </button>
-
-          {/* Logout Button */}
-          <button
-            onClick={onLogout}
-            className="w-full text-left flex items-center gap-3 px-4 py-2 text-[#52616B] hover:text-[#FF564F] hover:bg-[#FF564F]/10 rounded-lg text-xs uppercase tracking-widest font-bold transition-all"
-          >
-            <span className="material-symbols-outlined text-base">logout</span>
-            Logout
-          </button>
-        </div>
+const items = [
+  ['dashboard', 'Overview', LayoutDashboard], ['animals', 'Animal registry', PawPrint],
+  ['add', 'Register animal', Plus], ['adoptions', 'Adoptions', Heart],
+  ['reports', 'SOS reports', Siren], ['events', 'Community events', CalendarDays],
+];
+export default function Sidebar({ activePage, onNavigate, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const menuButton = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = event => { if (event.key === 'Escape') { setOpen(false); menuButton.current?.focus(); } };
+    window.addEventListener('keydown', dismiss);
+    return () => window.removeEventListener('keydown', dismiss);
+  }, [open]);
+  const navigate = page => { onNavigate(page); setOpen(false); };
+  return <>
+    <div className="mobile-nav"><span className="font-headline">STRAYCONNECT</span><button ref={menuButton} aria-label={open ? 'Close navigation' : 'Open navigation'} aria-expanded={open} aria-controls="dashboard-sidebar" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button></div>
+    {open && <button className="nav-scrim" aria-label="Close navigation" onClick={() => setOpen(false)} />}
+    <aside id="dashboard-sidebar" className={`arcade-sidebar ${open ? 'is-open' : ''}`}>
+      <a className="brand" href="#main-content" onClick={() => navigate('dashboard')}><img src={logo} alt="" /><span>STRAY<br />CONNECT<span className="brand-sub">CARE OPERATIONS</span></span></a>
+      <div className="sidebar-label">YOUR CONTROL ROOM</div>
+      <nav aria-label="Main navigation">{items.map(([id, label, Icon], index) => <button key={id} onClick={() => navigate(id)} aria-current={activePage === id ? 'page' : undefined} className={`nav-item ${activePage === id ? 'is-active' : ''}`}>{createElement(Icon, { size: 20, strokeWidth: 2.5 })}<span>{label}</span><small>0{index + 1}</small></button>)}</nav>
+      <div className="sidebar-bottom"><div className="sidebar-note"><span>SMALL PAWS.<br />BIG MISSION.</span><PawPrint size={30} /><p>A safer world for every stray.</p></div>
+        <button className="nav-item" onClick={() => navigate('help')} aria-current={activePage === 'help' ? 'page' : undefined}><CircleHelp size={20} />Help & guidance</button>
+        <button className="nav-item" onClick={onLogout}><LogOut size={20} />Sign out</button>
       </div>
     </aside>
-  );
+  </>;
 }
-
-export default Sidebar;

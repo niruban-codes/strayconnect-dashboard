@@ -5,6 +5,11 @@ export default {
   theme: {
     extend: {
       colors: {
+        ink: '#111111', paper: '#FFFDF4', muted: '#454545',
+        'arcade-yellow': '#FFE335', 'arcade-mint': '#8FE8BC',
+        'arcade-pink': '#FF82BF', 'arcade-purple': '#BB9AFF',
+        'arcade-blue': '#2455FF', 'arcade-blue-light': '#DCE5FF',
+
         "surface-dim": "#dbdad7",
         "surface-container-low": "#f4f3f1",
         "on-error-container": "#93000a",
@@ -39,7 +44,7 @@ export default {
         "outline-variant": "#c2c9bb",
         "on-surface": "#1a1c1a",
         "secondary-container": "#ccebc7",
-        "surface": "#faf9f6",
+        "surface": "#FFFDF4",
         "tertiary-container": "#6e4800",
         "background": "#faf9f6",
         "on-secondary-fixed-variant": "#334d33",
@@ -51,13 +56,20 @@ export default {
         "primary-fixed-dim": "#a1d494",
         "on-primary-fixed-variant": "#23501e",
         "on-secondary": "#ffffff",
-        "primary": "#154212",
+        "primary": "#111111",
       },
       fontFamily: {
-        headline: ["Plus Jakarta Sans", "sans-serif"],
-        body: ["Be Vietnam Pro", "sans-serif"],
-        label: ["Be Vietnam Pro", "sans-serif"],
+        headline: ["Silkscreen", "monospace"],
+        body: ["Poppins", "sans-serif"],
+        label: ["Poppins", "sans-serif"],
       },
+      boxShadow: {
+        sm: '3px 3px 0 #111111', DEFAULT: '4px 4px 0 #111111',
+        md: '4px 4px 0 #111111', lg: '6px 6px 0 #111111',
+        xl: '7px 7px 0 #111111', '2xl': '8px 8px 0 #111111',
+      },
+      borderWidth: { DEFAULT: '3px' },
+      borderColor: { DEFAULT: '#111111' },
       borderRadius: {
         DEFAULT: "0.25rem",
         lg: "0.5rem",

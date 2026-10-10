@@ -101,46 +101,49 @@ function AnimalProfile({ animal, onClose }) {
     }
   };
 
-  const inputCls = "w-full bg-white border border-[#003459]/10 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#00A7E7]/30 outline-none text-[#00171F] font-['Urbanist'] font-semibold placeholder:text-[#52616B]/50 transition-all";
-  const labelCls = "text-[10px] uppercase font-extrabold text-[#52616B] ml-1 block mb-1 tracking-widest";
+  const inputCls = "w-full bg-paper border border-ink rounded-none p-3 text-sm focus:ring-2 focus:ring-[#2455FF]/30 outline-none text-[#111111] font-body font-semibold placeholder:text-muted transition-all";
+  const labelCls = "text-[10px] uppercase font-extrabold text-[#454545] ml-1 block mb-1 tracking-widest";
 
   return (
     <>
       {/* Backdrop */}
       <div onClick={onClose}
-        className="fixed inset-0 z-[60] bg-[#00171F]/40 backdrop-blur-sm" />
+        className="fixed inset-0 z-[60] bg-[#111111]/40 " />
 
       {/* Main Profile Modal */}
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 md:p-8 pointer-events-none font-['Urbanist']">
-        <div className="bg-white relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-[2rem] shadow-2xl flex flex-col md:flex-row pointer-events-auto">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 md:p-8 pointer-events-none font-body">
+        <div className="passport-modal border border-ink bg-paper relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-none shadow-2xl flex flex-col md:flex-row pointer-events-auto">
 
           {/* Close */}
           <button onClick={onClose}
-            className="absolute top-6 right-6 z-[80] w-10 h-10 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-md hover:bg-white text-[#00171F] shadow-sm transition-all active:scale-95 border border-[#003459]/5">
+            className="absolute top-6 right-6 z-[80] w-10 h-10 flex items-center justify-center rounded-none bg-paper  hover:bg-paper text-[#111111] shadow-sm transition-all  border border-ink">
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
 
           {/* Left — Photo Gallery */}
-          <div className="w-full md:w-5/12 bg-stone-50 p-6 flex flex-col gap-4 border-r border-[#003459]/5">
-            <div className="relative aspect-square w-full overflow-hidden rounded-2xl shadow-inner border border-[#003459]/5">
+          <div className="passport-gallery w-full md:w-5/12 bg-arcade-purple p-6 flex flex-col gap-4 border-r border-ink">
+            <div className="relative aspect-square w-full overflow-hidden rounded-none shadow-none border border-ink">
               {animal.imageUrl ? (
                 <img src={animal.imageUrl} alt={animal.name} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-stone-100 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-6xl text-[#52616B]/20">pets</span>
+                <div className="w-full h-full bg-paper flex items-center justify-center">
+                  <span className="material-symbols-outlined text-6xl text-muted">pets</span>
                 </div>
               )}
               <div className="absolute bottom-4 left-4">
-                <span className="bg-[#FF912C] text-white text-[10px] px-3 py-1 rounded-full font-extrabold tracking-widest uppercase shadow-md">
+                <span className="bg-[#8F4500] text-white text-[10px] px-3 py-1 rounded-none font-extrabold tracking-widest uppercase shadow-md">
                   Featured
                 </span>
               </div>
             </div>
+            <div className="passport-counters"><p className="eyebrow">CARE LOG / RECORD COUNTS</p>{[
+              ['Vaccinations', animal.vaccinations?.length || 0], ['Medical notes', animal.medicalHistory?.length || 0],
+            ].map(([label, count]) => <div key={label}><span>{label}</span><strong>{count}</strong></div>)}<small>Records on file, not a health assessment.</small></div>
             {/* Thumbnails */}
             {animal.imageUrls?.length > 1 && (
               <div className="grid grid-cols-4 gap-3">
                 {animal.imageUrls.slice(0, 3).map((url, i) => (
-                  <div key={i} className="aspect-square rounded-xl overflow-hidden border border-[#003459]/10">
+                  <div key={i} className="aspect-square rounded-none overflow-hidden border border-ink">
                     <img src={url} alt="" className="w-full h-full object-cover" />
                   </div>
                 ))}
@@ -154,21 +157,21 @@ function AnimalProfile({ animal, onClose }) {
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 {animal.isVerified ? (
-                  <div className="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-1 uppercase tracking-wider">
+                  <div className="bg-arcade-mint text-emerald-700 text-[10px] font-extrabold px-3 py-1.5 rounded-none flex items-center gap-1 uppercase tracking-wider">
                     <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
                     Verified
                   </div>
                 ) : null}
-                <div className="bg-[#003459]/5 text-[#003459] text-[10px] font-extrabold px-3 py-1.5 rounded-lg uppercase tracking-wider">
+                <div className="bg-paper text-[#111111] text-[10px] font-extrabold px-3 py-1.5 rounded-none uppercase tracking-wider">
                   SC ID: {animal.animalId || 'N/A'}
                 </div>
               </div>
 
               {/* Name + Verify button */}
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex flex-wrap gap-4 justify-between items-start mb-6">
                 <div>
-                  <h2 className="font-['Poppins'] text-5xl font-black text-[#003459] mb-1 tracking-tight">{animal.name}</h2>
-                  <p className="font-semibold text-lg text-[#52616B] flex items-center gap-2 capitalize">
+                  <h2 className="font-headline text-3xl font-black text-[#111111] mb-1 tracking-tight">{animal.name}</h2>
+                  <p className="font-semibold text-lg text-[#454545] flex items-center gap-2 capitalize">
                     {animal.species} {animal.breed ? `· ${animal.breed}` : ''} · {animal.sex}
                   </p>
                 </div>
@@ -178,7 +181,7 @@ function AnimalProfile({ animal, onClose }) {
                     setVerifyError('');
                     setAdminPassword('');
                   }}
-                    className="bg-[#00A7E7]/10 hover:bg-[#00A7E7] text-[#00A7E7] hover:text-white font-extrabold px-6 py-3 rounded-full shadow-sm transition-all active:scale-95 flex items-center gap-2">
+                    className="bg-arcade-blue-light hover:bg-[#2455FF] text-[#2455FF] hover:text-white font-extrabold px-6 py-3 rounded-none shadow-sm transition-all  flex items-center gap-2">
                     <span className="material-symbols-outlined text-xl">shield</span>
                     Mark as Verified
                   </button>
@@ -186,16 +189,16 @@ function AnimalProfile({ animal, onClose }) {
               </div>
 
               {/* Meta Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 gap-4 mb-8">
                 {[
                   { label: 'Age', value: animal.age ? `${animal.age} Years` : 'Unknown' },
                   { label: 'Location', value: animal.location || 'Unknown' },
                   { label: 'Status', value: animal.status },
-                  { label: 'Health', value: 'Stable', highlight: true },
+                  { label: 'Passport', value: animal.isVerified ? 'Verified' : 'Pending', highlight: true },
                 ].map(item => (
-                  <div key={item.label} className="bg-white p-4 rounded-2xl border border-[#003459]/10 shadow-sm">
-                    <p className="text-[10px] uppercase font-extrabold text-[#52616B]/70 mb-1 tracking-widest">{item.label}</p>
-                    <p className={`font-bold text-lg capitalize ${item.highlight ? 'text-[#00A7E7]' : 'text-[#00171F]'}`}>
+                  <div key={item.label} className="bg-paper p-4 rounded-none border border-ink shadow-sm">
+                    <p className="text-[10px] uppercase font-extrabold text-muted mb-1 tracking-widest">{item.label}</p>
+                    <p className={`font-bold text-lg capitalize ${item.highlight ? 'text-[#2455FF]' : 'text-[#111111]'}`}>
                       {item.value}
                     </p>
                   </div>
@@ -205,7 +208,7 @@ function AnimalProfile({ animal, onClose }) {
 
             {/* Tabs */}
             <div className="px-8 pb-8">
-              <div className="flex gap-8 border-b border-[#003459]/10 mb-8">
+              <div className="flex flex-wrap gap-4 border-b border-ink mb-8">
                 {[
                   { id: 'vaccinations', label: 'Vaccination History' },
                   { id: 'medical', label: 'Medical History' },
@@ -213,8 +216,8 @@ function AnimalProfile({ animal, onClose }) {
                 ].map(tab => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                     className={`pb-4 text-sm font-bold transition-colors uppercase tracking-wider ${activeTab === tab.id
-                      ? 'text-[#003459] border-b-2 border-[#003459]'
-                      : 'text-[#52616B] hover:text-[#003459]'}`}>
+                      ? 'text-[#111111] border-b-2 border-[#111111]'
+                      : 'text-[#454545] hover:text-[#111111]'}`}>
                     {tab.label}
                   </button>
                 ))}
@@ -224,9 +227,9 @@ function AnimalProfile({ animal, onClose }) {
               {activeTab === 'vaccinations' && (
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-['Poppins'] text-xl font-black text-[#003459]">Immunization Records</h3>
+                    <h3 className="font-headline text-xl font-black text-[#111111]">Immunization Records</h3>
                     <button disabled={savingRecord || animal.status === 'archived'} onClick={() => setAddingVaccine(!addingVaccine)}
-                      className="text-[#00A7E7] hover:bg-[#00A7E7]/10 px-4 py-2 rounded-xl text-sm font-extrabold flex items-center gap-2 transition-colors">
+                      className="text-[#2455FF] hover:bg-arcade-blue-light px-4 py-2 rounded-none text-sm font-extrabold flex items-center gap-2 transition-colors">
                       <span className="material-symbols-outlined text-lg">add_circle</span>
                       Add Vaccine
                     </button>
@@ -234,7 +237,7 @@ function AnimalProfile({ animal, onClose }) {
 
                   {addingVaccine && (
                     <form onSubmit={handleAddVaccine}
-                      className="bg-stone-50 border-2 border-dashed border-[#003459]/20 p-6 rounded-[2rem]">
+                      className="bg-paper border-2 border-dashed border-ink p-6 rounded-none">
                       <div className="grid grid-cols-2 gap-4 mb-6">
                         <div>
                           <label className={labelCls}>Vaccine Name</label>
@@ -259,11 +262,11 @@ function AnimalProfile({ animal, onClose }) {
                       </div>
                       <div className="flex justify-end gap-3">
                         <button type="button" onClick={() => setAddingVaccine(false)}
-                          className="px-4 py-2 text-sm font-bold text-[#52616B] hover:text-[#FF564F] transition-colors">
+                          className="px-4 py-2 text-sm font-bold text-[#454545] hover:text-[#D92532] transition-colors">
                           Cancel
                         </button>
                         <button type="submit" disabled={savingRecord || isVerifying || animal.status === 'archived'}
-                          className="bg-[#003459] text-white px-6 py-2.5 rounded-full text-sm font-extrabold shadow-md hover:bg-[#00A7E7] transition-all active:scale-95">
+                          className="bg-[#111111] text-white px-6 py-2.5 rounded-none text-sm font-extrabold shadow-md hover:bg-[#2455FF] transition-all ">
                           Save Record
                         </button>
                       </div>
@@ -273,31 +276,31 @@ function AnimalProfile({ animal, onClose }) {
 
                   <div className="space-y-3">
                     {animal.vaccinations?.length > 0 ? animal.vaccinations.map((v, i) => (
-                      <div key={i} className="bg-white p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-sm border border-[#003459]/10 hover:shadow-md transition-shadow">
+                      <div key={i} className="bg-paper p-4 rounded-none flex flex-wrap items-center justify-between gap-4 shadow-sm border border-ink hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-[#003459]/5 rounded-xl flex items-center justify-center text-[#003459]">
+                          <div className="w-12 h-12 bg-paper rounded-none flex items-center justify-center text-[#111111]">
                             <span className="material-symbols-outlined">vaccines</span>
                           </div>
                           <div>
-                            <p className="font-extrabold text-[#00171F]">{v.vaccine}</p>
-                            <p className="text-xs text-[#52616B] font-medium">Administered by {v.givenBy || 'Unknown'}</p>
+                            <p className="font-extrabold text-[#111111]">{v.vaccine}</p>
+                            <p className="text-xs text-[#454545] font-medium">Administered by {v.givenBy || 'Unknown'}</p>
                           </div>
                         </div>
                         <div className="flex gap-8 text-right">
                           <div>
-                            <p className="text-[10px] uppercase font-extrabold text-[#52616B]/70 mb-0.5 tracking-widest">Given On</p>
-                            <p className="text-sm font-bold text-[#00171F]">{v.date}</p>
+                            <p className="text-[10px] uppercase font-extrabold text-muted mb-0.5 tracking-widest">Given On</p>
+                            <p className="text-sm font-bold text-[#111111]">{v.date}</p>
                           </div>
                           {v.nextDue && (
                             <div>
-                              <p className="text-[10px] uppercase font-extrabold text-[#52616B]/70 mb-0.5 tracking-widest">Next Due</p>
-                              <p className="text-sm font-black text-[#FF912C]">{v.nextDue}</p>
+                              <p className="text-[10px] uppercase font-extrabold text-muted mb-0.5 tracking-widest">Next Due</p>
+                              <p className="text-sm font-black text-[#8F4500]">{v.nextDue}</p>
                             </div>
                           )}
                         </div>
                       </div>
                     )) : (
-                      <p className="text-[#52616B] font-semibold text-sm py-4">No vaccination records yet.</p>
+                      <p className="text-[#454545] font-semibold text-sm py-4">No vaccination records yet.</p>
                     )}
                   </div>
                 </div>
@@ -307,9 +310,9 @@ function AnimalProfile({ animal, onClose }) {
               {activeTab === 'medical' && (
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-['Poppins'] text-xl font-black text-[#003459]">Clinical Observations</h3>
+                    <h3 className="font-headline text-xl font-black text-[#111111]">Clinical Observations</h3>
                     <button disabled={savingRecord || animal.status === 'archived'} onClick={() => setAddingMedical(!addingMedical)}
-                      className="text-[#00A7E7] hover:bg-[#00A7E7]/10 px-4 py-2 rounded-xl text-sm font-extrabold flex items-center gap-2 transition-colors">
+                      className="text-[#2455FF] hover:bg-arcade-blue-light px-4 py-2 rounded-none text-sm font-extrabold flex items-center gap-2 transition-colors">
                       <span className="material-symbols-outlined text-lg">add_circle</span>
                       Add Medical Record
                     </button>
@@ -317,7 +320,7 @@ function AnimalProfile({ animal, onClose }) {
 
                   {addingMedical && (
                     <form onSubmit={handleAddMedical}
-                      className="bg-stone-50 border-2 border-dashed border-[#003459]/20 p-6 rounded-[2rem]">
+                      className="bg-paper border-2 border-dashed border-ink p-6 rounded-none">
                       <div className="grid grid-cols-2 gap-4 mb-6">
                         <div>
                           <label className={labelCls}>Condition</label>
@@ -342,9 +345,9 @@ function AnimalProfile({ animal, onClose }) {
                       </div>
                       <div className="flex justify-end gap-3">
                         <button type="button" onClick={() => setAddingMedical(false)}
-                          className="px-4 py-2 text-sm font-bold text-[#52616B] hover:text-[#FF564F] transition-colors">Cancel</button>
+                          className="px-4 py-2 text-sm font-bold text-[#454545] hover:text-[#D92532] transition-colors">Cancel</button>
                         <button type="submit" disabled={savingRecord || isVerifying || animal.status === 'archived'}
-                          className="bg-[#003459] text-white px-6 py-2.5 rounded-full text-sm font-extrabold shadow-md hover:bg-[#00A7E7] active:scale-95 transition-all">
+                          className="bg-[#111111] text-white px-6 py-2.5 rounded-none text-sm font-extrabold shadow-md hover:bg-[#2455FF]  transition-all">
                           Save Record
                         </button>
                       </div>
@@ -353,22 +356,22 @@ function AnimalProfile({ animal, onClose }) {
 
                   <div className="space-y-3">
                     {animal.medicalHistory?.length > 0 ? animal.medicalHistory.map((m, i) => (
-                      <div key={i} className="bg-white p-4 rounded-2xl flex items-center gap-4 shadow-sm border border-[#003459]/10 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-[#00A7E7]/10 rounded-xl flex items-center justify-center flex-shrink-0 text-[#00A7E7]">
+                      <div key={i} className="bg-paper p-4 rounded-none flex items-center gap-4 shadow-sm border border-ink hover:shadow-md transition-shadow">
+                        <div className="w-12 h-12 bg-arcade-blue-light rounded-none flex items-center justify-center flex-shrink-0 text-[#2455FF]">
                           <span className="material-symbols-outlined">medical_information</span>
                         </div>
                         <div className="flex-1">
-                          <p className="font-extrabold text-[#00171F]">{m.condition}</p>
-                          {m.notes && <p className="text-xs text-[#52616B] font-medium mt-0.5">{m.notes}</p>}
+                          <p className="font-extrabold text-[#111111]">{m.condition}</p>
+                          {m.notes && <p className="text-xs text-[#454545] font-medium mt-0.5">{m.notes}</p>}
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-[10px] uppercase font-extrabold text-[#52616B]/70 mb-0.5 tracking-widest">Treated By</p>
-                          <p className="text-sm font-bold text-[#00171F]">{m.treatedBy || 'Unknown'}</p>
-                          <p className="text-[10px] text-[#52616B] font-semibold mt-1">{m.treatedOn}</p>
+                          <p className="text-[10px] uppercase font-extrabold text-muted mb-0.5 tracking-widest">Treated By</p>
+                          <p className="text-sm font-bold text-[#111111]">{m.treatedBy || 'Unknown'}</p>
+                          <p className="text-[10px] text-[#454545] font-semibold mt-1">{m.treatedOn}</p>
                         </div>
                       </div>
                     )) : (
-                      <p className="text-[#52616B] font-semibold text-sm py-4">No medical records yet.</p>
+                      <p className="text-[#454545] font-semibold text-sm py-4">No medical records yet.</p>
                     )}
                   </div>
                 </div>
@@ -377,20 +380,20 @@ function AnimalProfile({ animal, onClose }) {
               {/* Shelter Tab */}
               {activeTab === 'shelter' && (
                 <div className="space-y-4">
-                  <h3 className="font-['Poppins'] text-xl font-black text-[#003459] mb-6">Shelter Information</h3>
+                  <h3 className="font-headline text-xl font-black text-[#111111] mb-6">Shelter Information</h3>
                   {animal.shelter?.name ? (
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white p-4 rounded-2xl border border-[#003459]/10 shadow-sm">
-                        <p className="text-[10px] uppercase font-extrabold text-[#52616B]/70 mb-1 tracking-widest">Shelter Name</p>
-                        <p className="font-bold text-lg text-[#00171F]">{animal.shelter.name}</p>
+                      <div className="bg-paper p-4 rounded-none border border-ink shadow-sm">
+                        <p className="text-[10px] uppercase font-extrabold text-muted mb-1 tracking-widest">Shelter Name</p>
+                        <p className="font-bold text-lg text-[#111111]">{animal.shelter.name}</p>
                       </div>
-                      <div className="bg-white p-4 rounded-2xl border border-[#003459]/10 shadow-sm">
-                        <p className="text-[10px] uppercase font-extrabold text-[#52616B]/70 mb-1 tracking-widest">Contact</p>
-                        <p className="font-bold text-lg text-[#00171F]">{animal.shelter.contactNumber || 'N/A'}</p>
+                      <div className="bg-paper p-4 rounded-none border border-ink shadow-sm">
+                        <p className="text-[10px] uppercase font-extrabold text-muted mb-1 tracking-widest">Contact</p>
+                        <p className="font-bold text-lg text-[#111111]">{animal.shelter.contactNumber || 'N/A'}</p>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-[#52616B] font-semibold text-sm">No shelter information recorded.</p>
+                    <p className="text-[#454545] font-semibold text-sm">No shelter information recorded.</p>
                   )}
                 </div>
               )}
@@ -401,21 +404,21 @@ function AnimalProfile({ animal, onClose }) {
 
       {/* The Password Verification Modal overlay */}
       {showVerifyModal && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#00171F]/60 backdrop-blur-sm p-4 font-['Urbanist']">
-          <form onSubmit={handleConfirmVerification} className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#111111]/60  p-4 font-body">
+          <form onSubmit={handleConfirmVerification} className="bg-paper rounded-none p-8 w-full max-w-md shadow-2xl relative animate-in fade-in zoom-in duration-200">
 
             <button type="button" onClick={() => setShowVerifyModal(false)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-[#00171F] transition-colors">
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-none hover:bg-paper text-[#111111] transition-colors">
               <span className="material-symbols-outlined text-xl">close</span>
             </button>
 
-            <div className="w-16 h-16 bg-[#FF564F]/10 text-[#FF564F] rounded-2xl flex items-center justify-center mb-6">
+            <div className="w-16 h-16 bg-arcade-pink text-ink rounded-none flex items-center justify-center mb-6">
               <span className="material-symbols-outlined text-3xl">admin_panel_settings</span>
             </div>
 
-            <h3 className="text-2xl font-['Poppins'] font-black text-[#003459] mb-2 tracking-tight">Admin Override</h3>
-            <p className="text-[#52616B] font-medium text-sm mb-6 leading-relaxed">
-              You are about to securely verify <strong className="text-[#00171F] font-bold">{animal.name}</strong> and assign an official SC ID. Please confirm your admin password to proceed.
+            <h3 className="text-2xl font-headline font-black text-[#111111] mb-2 tracking-tight">Admin Override</h3>
+            <p className="text-[#454545] font-medium text-sm mb-6 leading-relaxed">
+              You are about to securely verify <strong className="text-[#111111] font-bold">{animal.name}</strong> and assign an official SC ID. Please confirm your admin password to proceed.
             </p>
 
             <div className="mb-6">
@@ -429,7 +432,7 @@ function AnimalProfile({ animal, onClose }) {
                 autoFocus
               />
               {verifyError && (
-                <p className="text-[#FF564F] text-xs mt-2 flex items-center gap-1 font-bold">
+                <p className="text-[#D92532] text-xs mt-2 flex items-center gap-1 font-bold">
                   <span className="material-symbols-outlined text-[14px]">error</span>
                   {verifyError}
                 </p>
@@ -438,11 +441,11 @@ function AnimalProfile({ animal, onClose }) {
 
             <div className="flex gap-3 mt-8">
               <button type="button" onClick={() => setShowVerifyModal(false)} disabled={isVerifying}
-                className="flex-1 py-3.5 font-bold text-[#52616B] bg-stone-100 rounded-full hover:bg-stone-200 transition-all">
+                className="flex-1 py-3.5 font-bold text-[#454545] bg-paper rounded-none hover:bg-stone-200 transition-all">
                 Cancel
               </button>
               <button type="submit" disabled={savingRecord || isVerifying || animal.status === 'archived'}
-                className="flex-1 py-3.5 font-extrabold text-white bg-[#003459] rounded-full hover:bg-[#00A7E7] active:scale-95 transition-all flex items-center justify-center gap-2">
+                className="flex-1 py-3.5 font-extrabold text-white bg-[#111111] rounded-none hover:bg-[#2455FF]  transition-all flex items-center justify-center gap-2">
                 {isVerifying ? (
                   <>
                     <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>

@@ -66,48 +66,48 @@ function Events() {
   if (feedError) return <FeedError message={feedError} onRetry={retry} />;
 
   return (
-    <div className="space-y-6 font-['Urbanist']">
+    <div className="space-y-6 font-body">
 
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-4">
-          <span className="w-12 h-12 rounded-xl bg-[#00A7E7]/10 flex items-center justify-center text-[#00A7E7] flex-shrink-0">
+          <span className="w-12 h-12 rounded-none bg-arcade-blue-light flex items-center justify-center text-[#2455FF] flex-shrink-0">
             <span className="material-symbols-outlined text-[26px]">event</span>
           </span>
-          <h2 className="text-3xl font-black text-[#003459] font-['Poppins'] tracking-tight">Community Events</h2>
+          <h2 className="text-3xl font-black text-[#111111] font-headline tracking-tight">Community Events</h2>
         </div>
       </div>
 
-      <div className="flex gap-6 border-b border-[#003459]/10 pb-2 mb-8">
+      <div className="flex gap-6 border-b border-ink pb-2 mb-8">
         <button
           onClick={() => setActiveTab('live')}
-          className={`pb-3 font-extrabold uppercase tracking-wider text-sm transition-colors ${activeTab === 'live' ? 'text-[#003459] border-b-2 border-[#003459]' : 'text-[#52616B] hover:text-[#003459]'}`}
+          className={`pb-3 font-extrabold uppercase tracking-wider text-sm transition-colors ${activeTab === 'live' ? 'text-[#111111] border-b-2 border-[#111111]' : 'text-[#454545] hover:text-[#111111]'}`}
         >
           Live Events ({liveEvents.length})
         </button>
         <button
           onClick={() => setActiveTab('pending')}
-          className={`pb-3 font-extrabold uppercase tracking-wider text-sm transition-colors flex items-center gap-2 ${activeTab === 'pending' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-[#52616B] hover:text-amber-500'}`}
+          className={`pb-3 font-extrabold uppercase tracking-wider text-sm transition-colors flex items-center gap-2 ${activeTab === 'pending' ? 'text-[#8F4500] border-b-2 border-ink' : 'text-[#454545] hover:text-[#8F4500]'}`}
         >
           Pending Review
           {pendingEvents.length > 0 && (
-            <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full">{pendingEvents.length}</span>
+            <span className="bg-arcade-yellow text-amber-700 text-[10px] px-2 py-0.5 rounded-none">{pendingEvents.length}</span>
           )}
         </button>
       </div>
 
       {loading ? (
         <div className="flex justify-center p-10">
-          <div className="flex items-center gap-3 text-[#52616B]">
+          <div className="flex items-center gap-3 text-[#454545]">
             <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
             <span className="text-sm font-bold">Loading calendar...</span>
           </div>
         </div>
       ) : displayEvents.length === 0 ? (
-        <div className="bg-white/50 border-2 border-dashed border-[#003459]/10 rounded-[2rem] p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
-          <span className="material-symbols-outlined text-6xl text-[#52616B]/30 mb-4">
+        <div className="bg-paper border-2 border-dashed border-ink rounded-none p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+          <span className="material-symbols-outlined text-6xl text-muted mb-4">
             {activeTab === 'pending' ? 'task' : 'event_busy'}
           </span>
-          <p className="text-[#52616B] font-bold text-lg">
+          <p className="text-[#454545] font-bold text-lg">
             {activeTab === 'pending' ? "You're all caught up! No pending applications." : "No live events scheduled at the moment."}
           </p>
         </div>
@@ -117,36 +117,36 @@ function Events() {
             const displayDate = eventDateLabel(event);
 
             return (
-              <div key={event.id} className="bg-white p-6 rounded-[2rem] border border-[#003459]/10 shadow-sm flex flex-col gap-4 hover:shadow-md transition-shadow">
+              <div key={event.id} className="bg-paper p-6 rounded-none border border-ink shadow-sm flex flex-col gap-4 hover:shadow-md transition-shadow">
 
-                <div className="flex gap-5">
+                <div className="event-summary flex gap-5">
                   {event.imageUrl ? (
-                    <img src={event.imageUrl} alt="Event Poster" className="w-28 h-28 object-cover rounded-2xl border border-[#003459]/5 shadow-sm" />
+                    <img src={event.imageUrl} alt="Event Poster" className="w-24 h-24 flex-shrink-0 object-cover rounded-none border border-ink shadow-sm" />
                   ) : (
-                    <div className="w-28 h-28 bg-stone-50 rounded-2xl flex items-center justify-center border border-[#003459]/5 text-[#52616B]/40">
+                    <div className="w-24 h-24 flex-shrink-0 bg-paper rounded-none flex items-center justify-center border border-ink text-muted">
                       <span className="material-symbols-outlined text-4xl">image</span>
                     </div>
                   )}
 
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <div className="flex justify-between items-start mb-1.5">
-                      <h3 className="font-black font-['Poppins'] text-[#003459] text-xl truncate pr-2">{event.title}</h3>
-                      <span className="px-2.5 py-1 bg-[#003459]/5 text-[#003459] rounded-md text-[10px] font-extrabold uppercase tracking-wider flex-shrink-0">
+                    <div className="flex flex-col items-start gap-2 mb-1.5">
+                      <h3 className="font-black font-headline text-[#111111] text-xl break-words pr-2">{event.title}</h3>
+                      <span className="px-2.5 py-1 bg-paper text-[#111111] rounded-none text-[10px] font-extrabold uppercase tracking-wider max-w-full break-words">
                         {event.type}
                       </span>
                     </div>
 
                     <div className="space-y-1.5 mt-1">
-                      <p className="text-sm text-[#52616B] font-semibold flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] text-[#52616B]/70">calendar_today</span>
+                      <p className="text-sm text-[#454545] font-semibold flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px] text-muted">calendar_today</span>
                         <span className="truncate">{displayDate}</span>
                       </p>
-                      <p className="text-sm text-[#52616B] font-semibold flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] text-[#52616B]/70">location_on</span>
+                      <p className="text-sm text-[#454545] font-semibold flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px] text-muted">location_on</span>
                         <span className="truncate">{event.location}</span>
                       </p>
-                      <p className="text-sm text-[#52616B] font-semibold flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] text-[#52616B]/70">person</span>
+                      <p className="text-sm text-[#454545] font-semibold flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px] text-muted">person</span>
                         <span className="truncate">By {event.organizer}</span>
                       </p>
                     </div>
@@ -154,25 +154,25 @@ function Events() {
                 </div>
 
                 {event.description && (
-                  <div className="bg-stone-50 p-4 rounded-2xl border border-[#003459]/5 mt-2">
-                    <p className="text-sm text-[#00171F] font-medium leading-relaxed line-clamp-2">{event.description}</p>
+                  <div className="bg-paper p-4 rounded-none border border-ink mt-2">
+                    <p className="text-sm text-[#111111] font-medium leading-relaxed line-clamp-2">{event.description}</p>
                   </div>
                 )}
 
                 {/* ── ADMIN ACTIONS ── */}
-                <div className="flex items-center gap-3 mt-auto pt-4 border-t border-[#003459]/5">
+                <div className="flex items-center gap-3 mt-auto pt-4 border-t border-ink">
                   {activeTab === 'pending' ? (
                     <>
                       <button
                         onClick={() => handleApprove(event)}
-                        className="flex-1 bg-[#003459] text-white font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-[#00A7E7] transition-all shadow-sm"
+                        className="flex-1 bg-[#111111] text-white font-extrabold py-3 rounded-none flex justify-center items-center gap-2 hover:bg-[#2455FF] transition-all shadow-sm"
                       >
                         <span className="material-symbols-outlined text-[18px]">check_circle</span>
                         Approve & Publish
                       </button>
                       <button
                         onClick={() => handleReject(event)}
-                        className="flex-1 bg-[#FF564F]/10 text-[#FF564F] font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-[#FF564F] hover:text-white transition-all shadow-sm"
+                        className="flex-1 bg-arcade-pink text-ink font-extrabold py-3 rounded-none flex justify-center items-center gap-2 hover:bg-[#D92532] hover:text-white transition-all shadow-sm"
                       >
                         <span className="material-symbols-outlined text-[18px]">cancel</span>
                         Reject
@@ -182,7 +182,7 @@ function Events() {
                     // 🚀 NEW: Delete Button for Live Events
                     <button
                       onClick={() => handleDeleteLiveEvent(event.id, event.title)}
-                      className="w-full bg-[#FF564F]/10 text-[#FF564F] font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-[#FF564F] hover:text-white transition-all shadow-sm"
+                      className="w-full bg-arcade-pink text-ink font-extrabold py-3 rounded-none flex justify-center items-center gap-2 hover:bg-[#D92532] hover:text-white transition-all shadow-sm"
                     >
                       <span className="material-symbols-outlined text-[18px]">delete_forever</span>
                       Remove Event

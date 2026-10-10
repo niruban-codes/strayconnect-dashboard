@@ -74,24 +74,24 @@ function AddAnimal({ onSuccess, report }) {
     }
   };
 
-  const inputCls = "w-full bg-stone-100/50 border border-[#003459]/10 rounded-2xl p-4 focus:ring-2 focus:ring-[#00A7E7]/30 text-[#00171F] font-['Urbanist'] font-semibold placeholder:text-[#52616B]/60 transition-all outline-none text-sm";
-  const labelCls = "text-sm font-extrabold text-[#003459] font-['Urbanist'] ml-1 block mb-2 tracking-wide";
-  const sectionIconCls = "w-10 h-10 rounded-[12px] bg-[#00A7E7]/10 flex items-center justify-center text-[#00A7E7] flex-shrink-0";
+  const inputCls = "w-full bg-paper border border-ink rounded-none p-4 focus:ring-2 focus:ring-[#2455FF]/30 text-[#111111] font-body font-semibold placeholder:text-muted transition-all outline-none text-sm";
+  const labelCls = "text-sm font-extrabold text-[#111111] font-body ml-1 block mb-2 tracking-wide";
+  const sectionIconCls = "w-10 h-10 rounded-none bg-arcade-blue-light flex items-center justify-center text-[#2455FF] flex-shrink-0";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
-      {report && <p className="p-4 bg-white rounded-xl">Registering from a rescue report. Location, species and the report photo are prefilled; you can replace the photo.</p>}
+      {report && <p className="p-4 bg-paper rounded-none">Registering from a rescue report. Location, species and the report photo are prefilled; you can replace the photo.</p>}
       {/* Basic Info */}
       <section>
         <div className="flex items-center gap-4 mb-8">
           <span className={sectionIconCls}>
             <span className="material-symbols-outlined text-[22px]">info</span>
           </span>
-          <h3 className="text-xl font-black text-[#003459] font-['Poppins'] tracking-tight">Basic Information</h3>
+          <h3 className="text-xl font-black text-[#111111] font-headline tracking-tight">Basic Information</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className={labelCls}>Animal Name <span className="text-[#52616B] font-medium ml-1">(Optional)</span></label>
+            <label className={labelCls}>Animal Name <span className="text-[#454545] font-medium ml-1">(Optional)</span></label>
             <input className={inputCls} type="text" placeholder="e.g. Bella"
               value={name} onChange={e => setName(e.target.value)} />
           </div>
@@ -149,7 +149,7 @@ function AddAnimal({ onSuccess, report }) {
           <span className={sectionIconCls}>
             <span className="material-symbols-outlined text-[22px]">location_on</span>
           </span>
-          <h3 className="text-xl font-black text-[#003459] font-['Poppins'] tracking-tight">Rescue Location</h3>
+          <h3 className="text-xl font-black text-[#111111] font-headline tracking-tight">Rescue Location</h3>
         </div>
         <div>
           <label className={labelCls}>Area / City</label>
@@ -164,20 +164,20 @@ function AddAnimal({ onSuccess, report }) {
           <span className={sectionIconCls}>
             <span className="material-symbols-outlined text-[22px]">photo_camera</span>
           </span>
-          <h3 className="text-xl font-black text-[#003459] font-['Poppins'] tracking-tight">Gallery & Identification</h3>
+          <h3 className="text-xl font-black text-[#111111] font-headline tracking-tight">Gallery & Identification</h3>
         </div>
-        <label className="border-2 border-dashed border-[#003459]/20 rounded-[1.5rem] p-10 flex flex-col items-center justify-center bg-stone-100/30 hover:bg-[#003459]/5 transition-colors cursor-pointer group">
-          <span className="material-symbols-outlined text-4xl text-[#52616B]/50 group-hover:text-[#00A7E7] transition-colors mb-2">cloud_upload</span>
-          <p className="text-[#00171F] font-['Urbanist'] font-bold">Drag and drop photos here</p>
-          <p className="text-[#52616B] font-['Urbanist'] font-semibold text-xs mt-1 uppercase tracking-widest">Supports JPG, PNG up to 10MB</p>
+        <label className="border-2 border-dashed border-ink rounded-none p-10 flex flex-col items-center justify-center bg-paper hover:bg-paper transition-colors cursor-pointer group">
+          <span className="material-symbols-outlined text-4xl text-muted group-hover:text-[#2455FF] transition-colors mb-2">cloud_upload</span>
+          <p className="text-[#111111] font-body font-bold">Choose animal photos</p>
+          <p className="text-[#454545] font-body font-semibold text-xs mt-1 uppercase tracking-widest">Select one or more clear images</p>
           <input type="file" accept="image/*" multiple className="hidden"
             onChange={e => setFiles(e.target.files)} required={!report?.imageUrl} />
         </label>
-        {report?.imageUrl && files.length === 0 && <img src={report.imageUrl} alt="Photo from rescue report" className="mt-4 w-32 h-32 object-cover rounded-xl" />}
+        {report?.imageUrl && files.length === 0 && <img src={report.imageUrl} alt="Photo from rescue report" className="mt-4 w-32 h-32 object-cover rounded-none" />}
         {files.length > 0 && (
           <div className="mt-4 flex gap-3 flex-wrap">
             {Array.from(files).map((file, i) => (
-              <div key={i} className="w-16 h-16 rounded-xl overflow-hidden border-2 border-[#003459]">
+              <div key={i} className="w-16 h-16 rounded-none overflow-hidden border-2 border-[#111111]">
                 <img src={URL.createObjectURL(file)} alt=""
                   className="w-full h-full object-cover" />
               </div>
@@ -188,25 +188,25 @@ function AddAnimal({ onSuccess, report }) {
 
       {/* Conditionally Render Shelter Info */}
       {ownershipStatus === 'sheltered' && (
-        <section className="bg-stone-50 rounded-2xl p-6 border border-[#003459]/10 animate-in fade-in slide-in-from-top-4 duration-300">
+        <section className="bg-paper rounded-none p-6 border border-ink animate-in fade-in slide-in-from-top-4 duration-300">
           <details className="group" open>
             <summary className="flex items-center justify-between cursor-pointer list-none">
               <div className="flex items-center gap-3">
-                <span className="w-10 h-10 rounded-[12px] bg-[#FF912C]/10 flex items-center justify-center text-[#FF912C]">
+                <span className="w-10 h-10 rounded-none bg-arcade-yellow flex items-center justify-center text-[#8F4500]">
                   <span className="material-symbols-outlined text-[22px]">home_health</span>
                 </span>
-                <h3 className="text-lg font-black text-[#003459] font-['Poppins'] tracking-tight">Shelter Information</h3>
+                <h3 className="text-lg font-black text-[#111111] font-headline tracking-tight">Shelter Information</h3>
               </div>
             </summary>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-[#003459]/10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-ink">
               <div>
                 <label className={labelCls}>Shelter Name</label>
-                <input className="w-full bg-white border border-[#003459]/10 rounded-xl p-3 focus:ring-2 focus:ring-[#00A7E7]/30 text-[#00171F] font-['Urbanist'] font-semibold transition-all outline-none text-sm"
+                <input className="w-full bg-paper border border-ink rounded-none p-3 focus:ring-2 focus:ring-[#2455FF]/30 text-[#111111] font-body font-semibold transition-all outline-none text-sm"
                   type="text" value={shelterName} onChange={e => setShelterName(e.target.value)} required={ownershipStatus === 'sheltered'} />
               </div>
               <div>
                 <label className={labelCls}>Contact Number</label>
-                <input className="w-full bg-white border border-[#003459]/10 rounded-xl p-3 focus:ring-2 focus:ring-[#00A7E7]/30 text-[#00171F] font-['Urbanist'] font-semibold placeholder:text-[#52616B]/50 transition-all outline-none text-sm"
+                <input className="w-full bg-paper border border-ink rounded-none p-3 focus:ring-2 focus:ring-[#2455FF]/30 text-[#111111] font-body font-semibold placeholder:text-muted transition-all outline-none text-sm"
                   type="tel" placeholder="+94 XX XXX XXXX"
                   value={shelterContact} onChange={e => setShelterContact(e.target.value)} />
               </div>
@@ -218,7 +218,7 @@ function AddAnimal({ onSuccess, report }) {
       {/* Submit */}
       <div className="pt-4">
         <button type="submit" disabled={submitting}
-          className="w-full py-5 px-8 rounded-full bg-[#003459] text-white font-['Urbanist'] font-extrabold text-lg shadow-lg shadow-[#003459]/20 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed tracking-wide">
+          className="w-full py-5 px-8 rounded-none bg-[#111111] text-white font-body font-extrabold text-lg shadow-lg  hover:brightness-110 active:translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed tracking-wide">
           <span className="material-symbols-outlined">app_registration</span>
           {submitting ? 'Registering...' : 'Register Animal'}
         </button>
