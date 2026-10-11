@@ -5,12 +5,18 @@ import { collection, doc, setDoc, runTransaction, serverTimestamp } from 'fireba
 import { passportId } from '../utils/passport';
 import { registerRescueAnimal } from '../utils/rescueIntake';
 import axios from 'axios';
+import { ageFromBirthDate, formatAnimalAge, todayDateValue } from '../utils/animalAge';
+
+const speciesOptions = ['dog', 'cat', 'bird', 'rabbit', 'reptile', 'livestock', 'other'];
 
 function AddAnimal({ onSuccess, report }) {
   const [name, setName] = useState('');
-  const [species, setSpecies] = useState(report?.animalType?.toLowerCase() || '');
+  const reportedSpecies = report?.animalType?.trim().toLowerCase() || '';
+  const [species, setSpecies] = useState(speciesOptions.includes(reportedSpecies) ? reportedSpecies : reportedSpecies ? 'other' : '');
+  const [otherSpecies, setOtherSpecies] = useState(reportedSpecies === 'other' ? report?.animalDetails || '' : !speciesOptions.includes(reportedSpecies) ? report?.animalType || '' : '');
   const [breed, setBreed] = useState('');
-  const [age, setAge] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [dateOfBirthEstimated, setDateOfBirthEstimated] = useState(false);
   const [sex, setSex] = useState('unknown');
 
   // Defaulting to stray for the admin dashboard
@@ -24,6 +30,9 @@ function AddAnimal({ onSuccess, report }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!species) { alert("Please select a species."); return; }
+    if (species === 'other' && !otherSpecies.trim()) { alert('Please describe the animal species.'); return; }
+    const calculatedAge = dateOfBirth ? ageFromBirthDate(dateOfBirth) : null;
+    if (dateOfBirth && !calculatedAge) { alert('Please enter a valid birth date that is not in the future.'); return; }
     if (submitting) return;
     if (files.length === 0 && !report?.imageUrl) { alert("Please select at least one image."); return; }
     setSubmitting(true);
@@ -45,9 +54,13 @@ function AddAnimal({ onSuccess, report }) {
       const animalId = passportId(animalRef.id);
 
       const data = {
-        animalId, name, species,
+        animalId, name, species: species === 'other' ? otherSpecies.trim() : species,
+        speciesCategory: species,
         breed: breed || 'Unknown',
-        age: age ? Number(age) : null,
+        dateOfBirth: dateOfBirth || null,
+        dateOfBirthEstimated: Boolean(dateOfBirth && dateOfBirthEstimated),
+        // Keep a numeric snapshot for older clients; dashboard age is derived from the birth date.
+        age: calculatedAge ? Number((calculatedAge.years + calculatedAge.months / 12).toFixed(2)) : null,
         sex, location: location || 'Unknown',
         status: ownershipStatus, // stray or sheltered
         isVerified: false,
@@ -61,7 +74,7 @@ function AddAnimal({ onSuccess, report }) {
       if (report) registeredId = await runTransaction(db, tx => registerRescueAnimal(tx, doc(db, 'reports', report.id), animalRef, data, auth.currentUser.uid, serverTimestamp()));
       else await setDoc(animalRef, data);
 
-      setName(''); setSpecies(''); setBreed(''); setAge('');
+      setName(''); setSpecies(''); setOtherSpecies(''); setBreed(''); setDateOfBirth(''); setDateOfBirthEstimated(false);
       setSex('unknown'); setOwnershipStatus('stray'); setLocation('');
       setShelterName(''); setShelterContact(''); setFiles([]);
       e.target.reset();
@@ -97,8 +110,8 @@ function AddAnimal({ onSuccess, report }) {
           </div>
 
           <div>
-            <label className={labelCls}>Species</label>
-            <select className={inputCls} value={species} onChange={e => setSpecies(e.target.value)} required>
+            <label htmlFor="animal-species" className={labelCls}>Species</label>
+            <select id="animal-species" className={inputCls} value={species} onChange={e => setSpecies(e.target.value)} required>
               <option value="" disabled>Select Species...</option>
               <option value="dog">Dog</option>
               <option value="cat">Cat</option>
@@ -108,6 +121,10 @@ function AddAnimal({ onSuccess, report }) {
               <option value="livestock">Livestock</option>
               <option value="other">Other</option>
             </select>
+            {species === 'other' && <div className="mt-4">
+              <label htmlFor="other-species" className={labelCls}>Which species?</label>
+              <input id="other-species" className={inputCls} type="text" value={otherSpecies} onChange={e => setOtherSpecies(e.target.value)} placeholder="e.g. Tortoise, squirrel, monkey" required maxLength={100} pattern=".*\S.*" />
+            </div>}
           </div>
 
           <div>
@@ -127,9 +144,10 @@ function AddAnimal({ onSuccess, report }) {
 
           <div className="grid grid-cols-2 gap-4 md:col-span-2">
             <div>
-              <label className={labelCls}>Estimated Age (yrs)</label>
-              <input className={inputCls} type="number" placeholder="e.g. 2"
-                min="0" max="30" value={age} onChange={e => setAge(e.target.value)} />
+              <label htmlFor="animal-birth-date" className={labelCls}>Date of birth <span className="text-xs font-normal">(Optional)</span></label>
+              <input id="animal-birth-date" className={inputCls} type="date" max={todayDateValue()} value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} aria-describedby="animal-age-preview" />
+              <p id="animal-age-preview" role="status" className="mt-2 text-xs text-muted">{dateOfBirth ? `Age: ${formatAnimalAge({ dateOfBirth, dateOfBirthEstimated })}` : 'Leave blank if unknown. Age is calculated in years and months.'}</p>
+              {dateOfBirth && <label className="mt-3 flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={dateOfBirthEstimated} onChange={e => setDateOfBirthEstimated(e.target.checked)} />This birth date is an estimate</label>}
             </div>
             <div>
               <label className={labelCls}>Sex</label>
@@ -149,7 +167,7 @@ function AddAnimal({ onSuccess, report }) {
           <span className={sectionIconCls}>
             <span className="material-symbols-outlined text-[22px]">location_on</span>
           </span>
-          <h3 className="text-xl font-black text-[#111111] font-headline tracking-tight">Rescue Location</h3>
+          <h3 className="text-xl font-black text-[#111111] font-headline tracking-tight">Location</h3>
         </div>
         <div>
           <label className={labelCls}>Area / City</label>

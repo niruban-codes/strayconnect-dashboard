@@ -6,6 +6,7 @@ import { db, auth } from '../firebase';
 import { collection, onSnapshot, query, orderBy, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 
 import { archivePassport } from '../utils/passport';
+import { formatAnimalAge } from '../utils/animalAge';
 
 // UPDATE 1: Added onNavigate to the props
 function AnimalList({ onSelectAnimal, onNavigate }) {
@@ -69,14 +70,14 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
       </div>
 
       {/* Grid */}
-      <div className="animal-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="animal-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filtered.map(animal => (
           <div key={animal.id}
             className="animal-card bg-paper rounded-none border border-ink overflow-hidden group hover:shadow-xl  transition-all duration-500 cursor-pointer flex flex-col"
             onClick={() => onSelectAnimal(animal)}
           >
             {/* Photo */}
-            <div className="relative h-64 overflow-hidden bg-paper border-b border-ink">
+            <div className="relative h-44 overflow-hidden bg-paper border-b border-ink">
               {animal.imageUrl ? (
                 <img src={animal.imageUrl} alt={animal.name}
                   className="w-full h-full object-cover  transition-transform duration-700" />
@@ -87,8 +88,8 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
               )}
 
               {/* Floating Badges */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2">
-                <span className="px-3.5 py-1.5 bg-[#111111] text-white text-[10px] font-extrabold tracking-wider rounded-none  shadow-sm">
+              <div className="absolute top-3 left-3 right-3 flex flex-col items-start gap-2">
+                <span title={animal.animalId} className="max-w-full truncate px-2 py-1 bg-[#111111] text-white text-[9px] font-extrabold tracking-wide rounded-none shadow-sm">
                   {animal.animalId || 'No ID'}
                 </span>
                 {animal.isVerified ? (
@@ -106,22 +107,22 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
             </div>
 
             {/* Info */}
-            <div className="p-6 flex flex-col flex-1">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="font-headline font-black text-2xl text-[#111111] truncate pr-2">{animal.name || 'Unnamed Pet'}</h3>
-                <span className={`px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-none flex-shrink-0 ${statusStyle(animal.status)}`}>
+            <div className="p-4 flex flex-col flex-1">
+              <div className="flex flex-wrap gap-2 items-start mb-3">
+                <h3 className="w-full font-headline font-black text-lg text-[#111111] leading-snug">{animal.name || 'Unnamed Pet'}</h3>
+                <span className={`px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide rounded-none ${statusStyle(animal.status)}`}>
                   {animal.status}
                 </span>
               </div>
 
-              <div className="space-y-3 text-[#454545] font-semibold text-sm mb-8 flex-1">
+              <div className="space-y-2 text-[#454545] font-semibold text-xs mb-4 flex-1 break-words">
                 <div className="flex items-center gap-2.5">
                   <span className="material-symbols-outlined text-lg text-muted">pets</span>
                   <span className="capitalize text-[#111111]">{animal.species} · {animal.breed || 'Unknown breed'}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <span className="material-symbols-outlined text-lg text-muted">info</span>
-                  <span className="capitalize text-[#111111]">{animal.sex} · {animal.age ? `${animal.age} yrs` : 'Age unknown'}</span>
+                  <span className="capitalize text-[#111111]">{animal.sex} · {formatAnimalAge(animal)}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <span className="material-symbols-outlined text-lg text-muted">location_on</span>
@@ -130,16 +131,16 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-3 pt-4 border-t border-ink mt-auto">
+              <div className="flex items-center gap-2 pt-3 border-t border-ink mt-auto">
                 <button
                   onClick={() => onSelectAnimal(animal)}
-                  className="flex-1 py-3 bg-[#111111] text-white font-extrabold rounded-none hover:bg-[#2455FF] transition-all shadow-sm"
+                  className="flex-1 min-h-11 py-2 text-xs bg-[#111111] text-white font-extrabold rounded-none hover:bg-[#2455FF] transition-all shadow-sm"
                 >
                   View Profile
                 </button>
                 <button
                   onClick={(e) => handleArchive(e, animal.id)}
-                  className="p-3 bg-arcade-pink text-ink rounded-none hover:bg-[#D92532] hover:text-white transition-all shadow-sm"
+                  className="p-2 min-h-11 min-w-11 bg-arcade-pink text-ink rounded-none hover:bg-[#D92532] hover:text-white transition-all shadow-sm"
                   title="Archive Record" disabled={animal.status === 'archived'}
                 >
                   <span className="material-symbols-outlined block text-[20px]">archive</span>
@@ -153,13 +154,13 @@ function AnimalList({ onSelectAnimal, onNavigate }) {
         <div
           // UPDATE 2: Wired up the onClick handler
           onClick={() => onNavigate('add')}
-          className="bg-paper border-2 border-dashed border-ink rounded-none flex flex-col items-center justify-center p-12 text-center group cursor-pointer hover:bg-paper hover:border-ink hover:shadow-md transition-all duration-300 min-h-[400px]"
+          className="bg-paper border-2 border-dashed border-ink rounded-none flex flex-col items-center justify-center p-5 text-center group cursor-pointer hover:bg-paper hover:border-ink hover:shadow-md transition-all duration-300 min-h-[320px]"
         >
           <div className="w-16 h-16 rounded-none bg-paper flex items-center justify-center mb-5  group-hover:bg-arcade-blue-light group-hover:text-[#2455FF] transition-all duration-300">
             <span className="material-symbols-outlined text-[#111111] group-hover:text-[#2455FF] text-3xl transition-colors">add</span>
           </div>
-          <h4 className="font-headline font-bold text-xl text-[#111111] mb-2">Register New Animal</h4>
-          <p className="text-[#454545] font-semibold text-sm max-w-[200px]">Add a new rescue to the sanctuary registry.</p>
+          <h4 className="font-headline font-bold text-base text-[#111111] mb-2">Register New Animal</h4>
+          <p className="text-[#454545] font-semibold text-xs max-w-[200px]">Add a new rescue to the sanctuary registry.</p>
         </div>
       </div>
     </div>

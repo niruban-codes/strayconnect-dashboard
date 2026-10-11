@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import AccessLoading from './AccessLoading';
 
 export default function ProtectedRoute({ children }) {
     const [loading, setLoading] = useState(true);
@@ -48,14 +49,7 @@ export default function ProtectedRoute({ children }) {
 
     // ── LOADING STATE ──
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-[#FFE335] font-body">
-                <div className="flex flex-col items-center gap-4 bg-paper p-8 rounded-none shadow-sm border border-ink ">
-                    <span className="material-symbols-outlined animate-spin text-4xl text-[#111111]">progress_activity</span>
-                    <span className="text-[#111111] font-extrabold tracking-widest uppercase text-xs">Verifying Access...</span>
-                </div>
-            </div>
-        );
+        return <AccessLoading />;
     }
 
     // ── AUTHORIZED: RENDER DASHBOARD ──

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { Eye, EyeOff, ArrowRight, LockKeyhole, PawPrint } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, LockKeyhole } from 'lucide-react';
 import { auth } from '../firebase';
-import PixelMascot from './PixelMascot';
+import RescueRun from './RescueRun';
+import MeadowDivider from './MeadowDivider';
 import logo from '../assets/images/sc-logo.png';
 
 export default function Login() {
@@ -31,9 +32,10 @@ export default function Login() {
     <section className="login-story">
       <div className="login-brand"><img src={logo} alt="" /><span>STRAYCONNECT<small>CARE OPERATIONS / SRI LANKA</small></span></div>
       <div><p className="eyebrow">REAL CARE. EVERY DAY.</p><h1>SMALL PAWS.<br />BIG MISSION.</h1><p className="login-intro">Their next chapter starts with you. Coordinate rescues, keep care records, and help animals find their people.</p></div>
-      <div className="login-console"><div className="console-toolbar"><span>COMPANION / 01</span><span aria-hidden="true">♥ ♥ ♥</span></div><div className="login-pet-stage"><PixelMascot /><span className="pixel-caption">READY FOR<br />A FRESH START.</span></div><div className="console-toolbar"><span>FIND. HELP. CONNECT.</span><PawPrint size={19} /></div></div>
+      <RescueRun />
       <div className="login-tags"><span>RESCUE</span><span>CARE</span><span>REHOME</span></div>
     </section>
+    <MeadowDivider />
     <section className="login-form-side"><div className="login-card"><div className="login-lock"><LockKeyhole size={26} /></div><p className="eyebrow">WELCOME BACK</p><h2>ENTER THE<br />CONTROL ROOM.</h2><p className="mb-8 text-muted">Sign in to your admin or veterinary account.</p>
       {error && <p role="alert" className="notice-error">{error}</p>}{message && <p role="status" className="notice-success">{message}</p>}
       <form onSubmit={submit} className="space-y-5"><div><label htmlFor="email">Email address</label><input id="email" type="email" required autoComplete="email" placeholder="you@sanctuary.org" value={email} onChange={e => setEmail(e.target.value)} disabled={loading} /></div>

@@ -1,0 +1,26 @@
+.login-layout { position: relative; }
+.login-story { border-right: 0; padding-right: clamp(42px,5vw,72px); }
+.login-form-side { padding-left: clamp(42px,5vw,72px); }
+.meadow-divider { position: absolute; left: 50%; top: 0; bottom: 0; width: 64px; transform: translateX(-50%); overflow: hidden; pointer-events: none; z-index: 2; }
+.meadow-grass { position: absolute; inset: 0; image-rendering: pixelated; }
+.meadow-traveler { position: absolute; top: -30px; width: 25px; height: 25px; animation: meadow-travel 19s linear infinite; }
+.traveler-0 { left: 2px; animation-delay: -3s; }.traveler-1 { left: 29px; animation-duration: 25s; animation-direction: reverse; animation-delay: -11s; }.traveler-2 { left: 33px; animation-duration: 22s; animation-direction: reverse; animation-delay: -6s; }.traveler-3 { left: 10px; animation-duration: 29s; animation-delay: -17s; }
+.meadow-butterfly { width: 30px; animation: meadow-wings .6s steps(2,end) infinite; }.meadow-bug { width: 22px; animation: meadow-hop .7s steps(2,end) infinite; }
+@keyframes meadow-travel { 0% { top: -30px; transform: translateX(0); } 25% { transform: translateX(7px); } 50% { transform: translateX(-5px); } 75% { transform: translateX(4px); } 100% { top: calc(100% + 30px); transform: translateX(0); } }
+@keyframes meadow-wings { 50% { transform: scaleX(.55) rotate(12deg); } }
+@keyframes meadow-hop { 50% { transform: translate(3px,-4px) rotate(-8deg); } }
+.rescue-game { position: relative; background: var(--paper); border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); width: 100%; max-width: 580px; }
+.rescue-game-header { display: flex; justify-content: space-between; gap: 12px; padding: 13px 14px; border-bottom: 3px solid var(--ink); font: 10px/1.5 Silkscreen,monospace; }
+.rescue-game-stage { position: relative; overflow: hidden; }
+.rescue-game canvas { width: 100%; display: block; image-rendering: pixelated; }
+.rescue-tap-zone { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: manipulation; }
+.rescue-tap-zone:focus-visible { outline-offset: -5px; }
+.rescue-game-overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 10px; }
+.rescue-game-overlay > div { background: var(--paper); border: 2px solid var(--ink); padding: 13px 18px; display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; box-shadow: 3px 3px 0 var(--ink); }
+.rescue-game-overlay strong { font: 13px/1.5 Silkscreen,monospace; }.rescue-game-overlay span { font-size: 10px; }.rescue-game-overlay .arcade-button { font-size: 10px; min-height: 38px; padding: 8px 12px; }
+.rescue-progress { height: 8px; border-block: 2px solid var(--ink); background: #DCEFE8; }.rescue-progress span { display: block; height: 100%; background: #36754C; }
+.rescue-game-footer { padding: 12px 14px; }.rescue-game-footer p { font-size: 11px; min-height: 34px; line-height: 1.6; }.rescue-game-footer > div { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px; font: 9px/1.5 Silkscreen,monospace; }.rescue-game-footer button { padding: 5px 8px; border: 2px solid var(--ink); background: var(--purple); }
+.rescue-jump { position: absolute; bottom: 72px; right: 12px; min-height: 36px; padding: 6px 12px; font-size: 10px; }
+@media (max-width:900px) { .login-story { padding-right: 28px; border-bottom: 0; }.login-form-side { padding-left: 24px; }.meadow-divider { left: 0; top: 0; bottom: 0; transform: none; width: 20px; }.meadow-grass { left: -23px; }.meadow-traveler { left: 0; width: 18px; }.meadow-traveler svg { width: 16px; }.login-story { padding-left: 38px; }.rescue-game { max-width: 580px; }.login-form-side { padding-left: 38px; } }
+@media (max-width:420px) { .rescue-game-header { font-size: 8px; padding: 10px; }.rescue-game-overlay > div { padding: 7px 10px; gap: 4px; }.rescue-game-overlay strong { font-size: 10px; }.rescue-game-overlay span { display: none; }.rescue-game-overlay .arcade-button { min-height: 34px; font-size: 9px; }.rescue-game-footer { padding: 10px; }.rescue-game-footer > div { font-size: 8px; } }
+@media (prefers-reduced-motion:reduce) { .meadow-traveler { animation: none; top: 22%; }.traveler-1 { top: 42%; }.traveler-2 { top: 66%; }.traveler-3 { top: 85%; }.meadow-butterfly,.meadow-bug { animation: none; } }

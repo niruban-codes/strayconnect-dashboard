@@ -3,7 +3,7 @@ import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-// NEW: Import the gatekeeper
+import AccessLoading from './components/AccessLoading';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -18,13 +18,8 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  if (loading) return (
-    <div className="min-h-screen bg-surface flex items-center justify-center">
-      <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
-    </div>
-  );
+  if (loading) return <AccessLoading />;
 
-  // UPDATED: Wrap the Dashboard in the ProtectedRoute!
   return currentUser ? (
     <ProtectedRoute>
       <Dashboard />

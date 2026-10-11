@@ -6,11 +6,15 @@ import { verifyPassport } from '../utils/passport';
 import { saveMedicalRecord } from '../utils/medicalRecord';
 import { sendHealthPush } from '../services/healthNotifications';
 import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import AnimalPhotoViewer from './AnimalPhotoViewer';
+import { formatAnimalAge } from '../utils/animalAge';
 
 function AnimalProfile({ animal, onClose }) {
   const [activeTab, setActiveTab] = useState('vaccinations');
   const [addingVaccine, setAddingVaccine] = useState(false);
   const [addingMedical, setAddingMedical] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(null);
+  const photos = [...new Set([animal.imageUrl, ...(Array.isArray(animal.imageUrls) ? animal.imageUrls : [])].filter(url => typeof url === 'string' && url.trim()))];
 
   // Password Modal State
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -115,37 +119,33 @@ function AnimalProfile({ animal, onClose }) {
         <div className="passport-modal border border-ink bg-paper relative w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-none shadow-2xl flex flex-col md:flex-row pointer-events-auto">
 
           {/* Close */}
-          <button onClick={onClose}
+          <button onClick={onClose} aria-label="Close animal profile"
             className="absolute top-6 right-6 z-[80] w-10 h-10 flex items-center justify-center rounded-none bg-paper  hover:bg-paper text-[#111111] shadow-sm transition-all  border border-ink">
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
 
           {/* Left — Photo Gallery */}
           <div className="passport-gallery w-full md:w-5/12 bg-arcade-purple p-6 flex flex-col gap-4 border-r border-ink">
-            <div className="relative aspect-square w-full overflow-hidden rounded-none shadow-none border border-ink">
-              {animal.imageUrl ? (
-                <img src={animal.imageUrl} alt={animal.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-paper flex items-center justify-center">
+            {photos.length > 0 ? (
+              <button type="button" className="passport-photo-trigger" onClick={() => setPhotoIndex(0)} aria-label={`Open full photo of ${animal.name || 'animal'}`}>
+                <img src={photos[0]} alt={animal.name || 'Animal'} />
+                <span>VIEW FULL PHOTO ↗</span>
+              </button>
+            ) : (
+                <div className="aspect-square w-full bg-paper flex items-center justify-center border border-ink">
                   <span className="material-symbols-outlined text-6xl text-muted">pets</span>
                 </div>
-              )}
-              <div className="absolute bottom-4 left-4">
-                <span className="bg-[#8F4500] text-white text-[10px] px-3 py-1 rounded-none font-extrabold tracking-widest uppercase shadow-md">
-                  Featured
-                </span>
-              </div>
-            </div>
+            )}
             <div className="passport-counters"><p className="eyebrow">CARE LOG / RECORD COUNTS</p>{[
               ['Vaccinations', animal.vaccinations?.length || 0], ['Medical notes', animal.medicalHistory?.length || 0],
             ].map(([label, count]) => <div key={label}><span>{label}</span><strong>{count}</strong></div>)}<small>Records on file, not a health assessment.</small></div>
             {/* Thumbnails */}
-            {animal.imageUrls?.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
-                {animal.imageUrls.slice(0, 3).map((url, i) => (
-                  <div key={i} className="aspect-square rounded-none overflow-hidden border border-ink">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                  </div>
+            {photos.length > 1 && (
+              <div className="passport-photo-thumbs">
+                {photos.map((url, i) => (
+                  <button type="button" key={url} className="passport-photo-thumb" onClick={() => setPhotoIndex(i)} aria-label={`Open photo ${i + 1} of ${animal.name || 'animal'}`}>
+                    <img src={url} alt="" />
+                  </button>
                 ))}
               </div>
             )}
@@ -191,7 +191,7 @@ function AnimalProfile({ animal, onClose }) {
               {/* Meta Grid */}
               <div className="grid grid-cols-2 gap-4 mb-8">
                 {[
-                  { label: 'Age', value: animal.age ? `${animal.age} Years` : 'Unknown' },
+                  { label: 'Age', value: formatAnimalAge(animal) },
                   { label: 'Location', value: animal.location || 'Unknown' },
                   { label: 'Status', value: animal.status },
                   { label: 'Passport', value: animal.isVerified ? 'Verified' : 'Pending', highlight: true },
@@ -401,6 +401,8 @@ function AnimalProfile({ animal, onClose }) {
           </div>
         </div>
       </div>
+
+      {photoIndex !== null && photos.length > 0 && <AnimalPhotoViewer photos={photos} initialIndex={photoIndex} name={animal.name} onClose={() => setPhotoIndex(null)} />}
 
       {/* The Password Verification Modal overlay */}
       {showVerifyModal && (

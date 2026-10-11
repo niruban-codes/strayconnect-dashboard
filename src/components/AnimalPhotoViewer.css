@@ -1,0 +1,21 @@
+.animal-photo-viewer { padding: 0; margin: auto; width: min(1100px,calc(100% - 32px)); max-width: none; max-height: calc(100dvh - 32px); border: 3px solid #111; color: #111; background: #FFFDF4; box-shadow: 7px 7px 0 #111; }
+.animal-photo-viewer::backdrop { background: #111d; }
+.animal-photo-content { display: flex; flex-direction: column; max-height: calc(100dvh - 38px); }
+.animal-photo-content header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-bottom: 3px solid #111; background: #BB9AFF; flex-shrink: 0; }
+.animal-photo-content header strong { display: block; font: 13px/1.5 Silkscreen,monospace; overflow-wrap: anywhere; }
+.animal-photo-content header span { font-size: 11px; }
+.animal-photo-content button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; min-height: 44px; border: 2px solid #111; background: #FFE335; padding: 8px; flex-shrink: 0; font: 11px/1.4 Silkscreen,monospace; }
+.animal-photo-content button:hover { background: #8FE8BC; }
+.animal-photo-stage { min-height: 0; flex: 1; background: #111; display: grid; place-items: center; overflow: hidden; }
+.animal-photo-stage img { display: block; width: 100%; height: min(68dvh,760px); min-height: 0; object-fit: contain; }
+.animal-photo-stage p { color: #FFFDF4; padding: 40px 24px; text-align: center; }
+.animal-photo-content footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 3px solid #111; flex-shrink: 0; }
+.animal-photo-content footer > span { font-size: 11px; }.animal-photo-content footer > div { display: flex; gap: 10px; }
+.passport-photo-trigger { position: relative; display: block; width: 100%; aspect-ratio: 1; overflow: hidden; flex-shrink: 0; border: 3px solid #111; background: #FFFDF4; }
+.passport-photo-trigger img,.passport-photo-thumb img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+.passport-photo-trigger > span { position: absolute; left: 8px; bottom: 8px; right: 8px; padding: 8px; background: #FFE335; border: 2px solid #111; font: 10px/1.4 Silkscreen,monospace; }
+.passport-photo-thumbs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; max-height: 160px; overflow-y: auto; flex-shrink: 0; }
+.passport-photo-thumb { position: relative; aspect-ratio: 1; overflow: hidden; border: 3px solid #111; background: #FFFDF4; }
+.passport-gallery { overflow-y: auto; }
+@media(max-width:767px) { .passport-photo-trigger { max-width: 240px; margin-inline: auto; }.passport-gallery { overflow: visible; flex-shrink: 0; } }
+@media(max-width:480px) { .animal-photo-content footer { flex-wrap: wrap; }.animal-photo-content header { padding: 12px; }.animal-photo-stage img { height: 58dvh; } }
